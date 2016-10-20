@@ -1,0 +1,31 @@
+Package: forecastR
+Type: Package
+Title: Helps your forecastR select appropriate time series models
+Version: 0.1.0
+Author: Robert Smith
+Maintainer: Robert Smith <rob_smith@goodyear.com>
+Description: Helps automate time series forecast selection and boosting
+    parameter estimation.
+License: MIT
+LazyData: TRUE
+Imports:
+    Rcpp (>= 0.12.7),
+    stats,
+    forecast,
+    car,
+    broom,
+    pryr,
+    opera,
+    TSA
+Suggests:
+    testthat
+LinkingTo: Rcpp
+RoxygenNote: 5.0.1
+Collate:
+    'autocorrelation.tests.R'
+    'models.R'
+    'autofit.R'
+    'forecastR-package.R'
+    'transformations.R'
+    'tsm.R'
+    'utils.R'
