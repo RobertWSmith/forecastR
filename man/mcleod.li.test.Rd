@@ -2,9 +2,25 @@
 % Please edit documentation in R/autocorrelation.tests.R
 \name{mcleod.li.test}
 \alias{mcleod.li.test}
-\title{McLeod - Li Test}
+\alias{mcleod.li.test.Arima}
+\alias{mcleod.li.test.default}
+\alias{mcleod.li.test.ts}
+\alias{mcleod.li.test.tsm}
+\title{McLeod - Li Test for autocorrelation}
 \usage{
-mcleod.li.test(y, alpha = 0.05, max.lag = autocorr.signif.lags(y, alpha))
+mcleod.li.test(y, alpha = 0.05, max.lag = autocorr.lags(y, alpha))
+
+\method{mcleod.li.test}{default}(y, alpha = 0.05, max.lag = autocorr.lags(y,
+  alpha))
+
+\method{mcleod.li.test}{ts}(y, alpha = 0.05, max.lag = autocorr.lags(y,
+  alpha))
+
+\method{mcleod.li.test}{tsm}(y, alpha = 0.05,
+  max.lag = autocorr.lags(residuals(model(y)), alpha))
+
+\method{mcleod.li.test}{Arima}(y, alpha = 0.05,
+  max.lag = autocorr.lags(residuals(model(y)), alpha))
 }
 \arguments{
 \item{y}{univariate time series}
@@ -17,8 +33,18 @@ mcleod.li.test(y, alpha = 0.05, max.lag = autocorr.signif.lags(y, alpha))
 \code{'McLeodLiTest'} object
 }
 \description{
-McLeod - Li Test
+McLeod - Li Test for autocorrelation
 }
+\section{Methods (by class)}{
+\itemize{
+\item \code{default}: \code{numeric} specialization of the McLeod-Li Test.
+
+\item \code{ts}: \code{ts} specialization of the McLeod-Li Test.
+
+\item \code{tsm}: \code{tsm} specialization of the McLeod-Li Test.
+
+\item \code{Arima}: \code{\link[forecast]{Arima}} specialization of the McLeod-Li Test
+}}
 \examples{
 library(forecastR)
 data('AirPassengers', package='datasets')
@@ -28,10 +54,14 @@ aa2 <- arima(AirPassengers, lambda=0)
 mcleod.li.test(aa2)
 
 #check for GARCH residuals
-mcleod.li.test(resid(aa)^2)
-mcleod.li.test(resid(aa2)^2)
+mcleod.li.test(residuals(aa)^2)
+mcleod.li.test(residuals(aa2)^2)
 }
 \seealso{
 \code{\link[TSA]{McLeod.Li.test}}
+
+Other Autocorrelation Tests: \code{\link{autocorr.lags}},
+  \code{\link{durbin.watson.test}},
+  \code{\link{ljung.box.test}}, \code{\link{print.act}}
 }
 

@@ -4,14 +4,12 @@
 \alias{stlm}
 \title{STLM model fitting and updates}
 \usage{
-stlm(y, ..., model.name = "stlm")
+stlm(y, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
 
 \item{...}{additional argument for model function}
-
-\item{model.name}{name of model specialization}
 }
 \value{
 \code{tsm} object

@@ -2,9 +2,17 @@
 % Please edit documentation in R/autocorrelation.tests.R
 \name{ljung.box.test}
 \alias{ljung.box.test}
-\title{Ljung-Box Test}
+\alias{ljung.box.test.default}
+\alias{ljung.box.test.tsm}
+\title{Ljung-Box Test for autocorrelation}
 \usage{
-ljung.box.test(y, alpha = 0.05, max.lag = autocorr.signif.lags(y, alpha))
+ljung.box.test(y, alpha = 0.05, max.lag = autocorr.lags(y, alpha), ...)
+
+\method{ljung.box.test}{default}(y, alpha = 0.05, max.lag = autocorr.lags(y,
+  alpha), ...)
+
+\method{ljung.box.test}{tsm}(y, alpha = 0.05,
+  max.lag = autocorr.lags(residuals(y), alpha), ...)
 }
 \arguments{
 \item{y}{univariate time series}
@@ -12,26 +20,38 @@ ljung.box.test(y, alpha = 0.05, max.lag = autocorr.signif.lags(y, alpha))
 \item{alpha}{numeric, determines significance threshold for p-value analysis}
 
 \item{max.lag}{integer. If undefined, calculates an appropriate value}
+
+\item{...}{additional arguments}
 }
 \value{
 \code{'LjungBoxTest'} object
 }
 \description{
-Ljung-Box Test
+Ljung-Box Test for autocorrelation
 }
+\section{Methods (by class)}{
+\itemize{
+\item \code{default}: Default Ljung-Box Test
+
+\item \code{tsm}: Default Ljung-Box Test
+}}
 \examples{
 library(forecastR)
 data('AirPassengers', package='datasets')
 aa <- arima(AirPassengers)
-ljung.box.test(resid(aa))
+ljung.box.test(residuals(aa))
 aa2 <- arima(AirPassengers, lambda=0)
-ljung.box.test(resid(aa2))
+ljung.box.test(residuals(aa2))
 
 #check for GARCH residuals
-ljung.box.test(resid(aa)^2)
-ljung.box.test(resid(aa2)^2)
+ljung.box.test(residuals(aa)^2)
+ljung.box.test(residuals(aa2)^2)
 }
 \seealso{
 \code{\link[stats]{Box.test}}
+
+Other Autocorrelation Tests: \code{\link{autocorr.lags}},
+  \code{\link{durbin.watson.test}},
+  \code{\link{mcleod.li.test}}, \code{\link{print.act}}
 }
 

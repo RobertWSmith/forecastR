@@ -2,16 +2,17 @@
 % Please edit documentation in R/models.R
 \name{nnetar}
 \alias{nnetar}
+\alias{nnetar.w.decay}
 \title{NNETAR model fitting and updates}
 \usage{
-nnetar(y, ..., model.name = "nnetar")
+nnetar(y, ...)
+
+nnetar.w.decay(...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
 
 \item{...}{additional argument for model function}
-
-\item{model.name}{name of model specialization}
 }
 \value{
 \code{tsm} object
@@ -20,13 +21,38 @@ nnetar(y, ..., model.name = "nnetar")
 Wrapper for forecast package functions \code{\link[forecast]{nnetar}} to
 allow unified interface.
 }
+\section{Functions}{
+\itemize{
+\item \code{nnetar.w.decay}: NNETAR w/ default decay
+}}
 \examples{
+library(ggplot2)
 library(forecastR)
 data('AirPassengers', package='datasets')
-fit <- nnetar(AirPassengers)
-fit2 <- nnetar(AirPassengers, lambda=0)
+ap.split <- ts.split(AirPassengers)
+out.sample.len <- length(ap.split$out.of.sample)
+
+#base fit
+fit <- nnetar(ap.split$in.sample)
+#log transformation
+fit2 <- nnetar(ap.split$in.sample, lambda=0)
+#log transformation w/ nnet decay parameter
+fit3 <- nnetar(ap.split$in.sample, lambda=0, decay=0.01)
+
+fcst <- forecast(fit, h=out.sample.len)
+fcst2 <- forecast(fit2, h=out.sample.len)
+fcst3 <- forecast(fit3, h=out.sample.len)
+
+vals <- window(cbind(
+ data=ap.split$data,
+ base=fcst$mean,
+ lambda=fcst2$mean,
+ decay=fcst3$mean
+ ), start=c(1957,1))
+
+autoplot(vals, na.rm=TRUE)
 }
 \seealso{
-\code{\link[forecast]{nnetar}}
+\code{\link[forecast]{nnetar}} \code{\link[forecastR]{nnetar.w.decay}}
 }
 

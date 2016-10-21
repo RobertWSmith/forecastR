@@ -5,8 +5,8 @@
 \title{Mixture Model fit}
 \usage{
 ts.mixture(y, split = 0.2, oos.h = 18L, alpha = 0.05,
-  ts.model.types = c("arima", "sarima", "arfima", "bats", "ets",
-  "ets.multiplicative", "nnetar", "nnetar.w.decay", "tbats"), ...)
+  ts.model.types = c("arima", "arfima", "bats", "ets", "nnetar",
+  "nnetar.w.decay", "tbats"), ..., parent = emptyenv())
 }
 \arguments{
 \item{y}{\code{\link[stats]{ts}} object. univariate time series}
@@ -22,6 +22,8 @@ output.}
 model object}
 
 \item{...}{extra arguments for `ts.model.type`}
+
+\item{parent}{\code{environment} object. Default is \code{\link[base]{emptyenv}}}
 }
 \description{
 Mixture Model fit
