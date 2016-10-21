@@ -4,14 +4,29 @@
 \alias{arima}
 \title{ARIMA model fitting and updates}
 \usage{
-arima(y, ..., model.name = "arima")
+arima(y, d = NA, D = NA, stationary = TRUE, seasonal = (length(y) > 2.25
+  * frequency(y)), model = NULL, order = NULL, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
 
-\item{...}{additional argument for model function}
+\item{d}{integer. Number of non seasonal differences. See \code{\link[forecast]{auto.arima}}}
 
-\item{model.name}{name of model specialization}
+\item{D}{integer. Number of seasonal differences. See \code{\link[forecast]{auto.arima}}}
+
+\item{stationary}{logical. Passed to \code{\link[forecast]{auto.arima}} if
+\code{model} or \code{order} argument not passed as keyword arguments.}
+
+\item{seasonal}{logical. Defualt determined by checking length of time series `y`,
+if using monthly data (frequency=12), `y` must have more than 27 records to
+fit a seasonal model.}
+
+\item{model}{\code{tsm}, \code{\link[forecast]{Arima}} or
+\code{\link[stats]{arima}} object to be refit}
+
+\item{...}{additional argument for model function. See
+\code{\link[forecast]{Arima}} and \code{\link[forecast]{auto.arima}}
+for allowable named arguments and definitions}
 }
 \value{
 \code{tsm} object
@@ -29,5 +44,8 @@ fit3 <- arima(AirPassengers, lambda=0)
 }
 \seealso{
 \code{\link[forecast]{Arima}} and \code{\link[forecast]{auto.arima}}
+
+Other Time Series Models: \code{\link{arfima}},
+  \code{\link{bats}}, \code{\link{ets}}
 }
 

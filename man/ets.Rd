@@ -4,14 +4,12 @@
 \alias{ets}
 \title{ETS model fitting and updates}
 \usage{
-ets(y, ..., model.name = "ets")
+ets(y, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
 
 \item{...}{additional argument for model function}
-
-\item{model.name}{name of model specialization}
 }
 \value{
 \code{tsm} object
@@ -28,5 +26,8 @@ fit2 <- ets(AirPassengers, lambda=0)
 }
 \seealso{
 \code{\link[forecast]{ets}}
+
+Other Time Series Models: \code{\link{arfima}},
+  \code{\link{arima}}, \code{\link{bats}}
 }
 

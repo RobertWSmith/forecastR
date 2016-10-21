@@ -11,21 +11,26 @@ LazyData: TRUE
 Imports:
     Rcpp (>= 0.12.7),
     stats,
+    methods,
+    settings,
     forecast,
     car,
     broom,
     pryr,
     opera,
-    TSA
+    TSA,
+    meboot
 Suggests:
-    testthat
+    testthat,
+    ggplot2
 LinkingTo: Rcpp
 RoxygenNote: 5.0.1
 Collate:
     'autocorrelation.tests.R'
     'models.R'
     'autofit.R'
-    'forecastR-package.R'
+    'forecast.R'
+    'pkgname.R'
     'transformations.R'
     'tsm.R'
     'utils.R'

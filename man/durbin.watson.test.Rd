@@ -2,10 +2,17 @@
 % Please edit documentation in R/autocorrelation.tests.R
 \name{durbin.watson.test}
 \alias{durbin.watson.test}
-\title{Durbin-Watson test}
+\alias{durbin.watson.test.default}
+\alias{durbin.watson.test.tsm}
+\title{Durbin-Watson Test for autocorrelation}
 \usage{
-durbin.watson.test(y, alpha = 0.05, max.lag = autocorr.signif.lags(y,
-  alpha))
+durbin.watson.test(y, alpha = 0.05, max.lag = 1L, squared = FALSE, ...)
+
+\method{durbin.watson.test}{default}(y, alpha = 0.05, max.lag = 1L,
+  squared = FALSE, ...)
+
+\method{durbin.watson.test}{tsm}(y, alpha = 0.05, max.lag = 1L,
+  squared = FALSE, ...)
 }
 \arguments{
 \item{y}{univariate time series}
@@ -13,26 +20,46 @@ durbin.watson.test(y, alpha = 0.05, max.lag = autocorr.signif.lags(y,
 \item{alpha}{numeric, determines significance threshold for p-value analysis}
 
 \item{max.lag}{integer. If undefined, calculates an appropriate value}
+
+\item{squared}{logical Set to true to test squared residuals}
+
+\item{...}{additional arguments}
 }
 \value{
 \code{'DurbinWatsonTest'} object
 }
 \description{
-Durbin-Watson test
+Durbin-Watson Test for autocorrelation
 }
+\section{Methods (by class)}{
+\itemize{
+\item \code{default}: Default method
+
+\item \code{tsm}: \code{tsm} method
+}}
 \examples{
 library(forecastR)
 data('AirPassengers', package='datasets')
 aa <- arima(AirPassengers)
-durbin.watson.test(resid(aa))
+
+# returns equivalent results
+durbin.watson.test(aa)
+durbin.watson.test(residuals(aa))
 aa2 <- arima(AirPassengers, lambda=0)
-durbin.watson.test(resid(aa2))
+durbin.watson.test(residuals(aa2))
 
 #check for GARCH residuals
-durbin.watson.test(resid(aa)^2)
-durbin.watson.test(resid(aa2)^2)
+durbin.watson.test(residuals(aa)^2)
+#equivalent to above call
+durbin.watson.test(aa, squared=TRUE)
+
+durbin.watson.test(residuals(aa2)^2)
 }
 \seealso{
 \code{\link[car]{durbinWatsonTest}}
+
+Other Autocorrelation Tests: \code{\link{autocorr.lags}},
+  \code{\link{ljung.box.test}},
+  \code{\link{mcleod.li.test}}, \code{\link{print.act}}
 }
 

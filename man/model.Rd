@@ -2,19 +2,23 @@
 % Please edit documentation in R/tsm.R
 \name{model}
 \alias{model}
-\title{Extract a model from an object}
+\alias{model.default}
+\title{Extract Model from \code{object}}
 \usage{
 model(object, ...)
+
+\method{model}{default}(object, ...)
 }
 \arguments{
-\item{object}{object to be evaluated}
+\item{object}{an object which stores a model which requires direct access.}
 
-\item{...}{additional arguments for class specific evaluation}
-}
-\value{
-model object
+\item{...}{other arguments}
 }
 \description{
-Extract a model from an object
+Extract Model from \code{object}
 }
+\section{Methods (by class)}{
+\itemize{
+\item \code{default}: Default model extractor as pass-through
+}}
 

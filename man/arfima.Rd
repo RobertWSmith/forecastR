@@ -4,14 +4,12 @@
 \alias{arfima}
 \title{ARFIMA model fitting and updates}
 \usage{
-arfima(y, ..., model.name = "arfima")
+arfima(y, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
 
 \item{...}{additional argument for model function}
-
-\item{model.name}{name of model specialization}
 }
 \value{
 \code{tsm} object
@@ -28,5 +26,8 @@ fit2 <- arfima(AirPassengers, lambda=0)
 }
 \seealso{
 \code{\link[forecast]{arfima}}
+
+Other Time Series Models: \code{\link{arima}},
+  \code{\link{bats}}, \code{\link{ets}}
 }
 

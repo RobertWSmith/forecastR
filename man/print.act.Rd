@@ -14,4 +14,27 @@
 \description{
 Print classes of \code{act} (autocorrelation test)
 }
+\examples{
+library(forecastR)
+data('AirPassengers', package='datasets')
+aa <- arima(AirPassengers)
+
+aa.dw <- durbin.watson.test(aa)
+print(aa.dw)
+
+aa.dw.sq <- durbin.watson.test(aa, squared=TRUE)
+print(aa.dw.sq)
+
+aa.lb <- ljung.box.test(aa)
+print(aa.lb)
+
+aa.ml <- mcleod.li.test(aa)
+print(aa.ml)
+}
+\seealso{
+Other Autocorrelation Tests: \code{\link{autocorr.lags}},
+  \code{\link{durbin.watson.test}},
+  \code{\link{ljung.box.test}},
+  \code{\link{mcleod.li.test}}
+}
 

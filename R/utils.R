@@ -8,12 +8,15 @@
 #'   out of sample.
 #' @param as.list logical. Default \code{TRUE} returns a list with 3 elements,
 #'   if \code{FALSE}, returns a \code{mts} object with 3 columns
+#' @param short.ts.multiple numeric. Multiple of \code{frequency(x)} which
+#'   if \code{frequency(x) * short.ts.multiple > length(x)} indicates that a
+#'   time series is short. Defaults to 2.25. Controls attribute \code{is.short}.
 #' @param ... additional options, not currently used
 #'
 #' @return \code{ts.split} object.
 #' @export
 #'
-#' @importFrom stats tsp frequency window
+#' @importFrom stats tsp frequency window na.omit
 #'
 #' @examples
 #' library(forecastR)
@@ -27,22 +30,35 @@
 #'
 #' length(na.omit(x.out.of.sample)) == (length(x.data) * frac)
 #' x.data == c(na.omit(x.in.sample), na.omit(x.out.of.sample))
-ts.split <- function(x, split = 0.2, as.list = TRUE, ...)
+ts.split <- function(x, split = 0.2, as.list = TRUE,
+                     short.ts.multiple = package_options("short.ts.frequency.multiple"),
+                     ...)
 {
-  record.count <- length(x)
-  if (inherits(x, "mts"))
-    record.count <- nrow(x)
+  is.short <- (length(x) < (frequency(x) * short.ts.multiple))
+  record.count <- dim(x)
+  if (length(record.count) > 1)
+    record.count <- record.count[1]
+  else if (is.null(record.count))
+    record.count <- length(x)
 
-  split.records <- as.numeric(if (split >= 0 & split <= 1) {
-    as.integer(round(record.count * split))
-  } else if (split > 1) {
-    as.integer(round(split))
-  } else {
-    as.integer(1L)
-  })
-  data <- x
-  in.sample <- window(x, end = tsp(x)[2] - (split.records/frequency(x)))
-  out.of.sample <- window(x, start = tsp(x)[2] - ((split.records - 1)/frequency(x)))
+  if (split < 0.0)
+    stop("`split` must be >= 0.0")
+
+  split.records <- as.numeric(1L)
+  if (split < 1.0)
+    split.records <- as.numeric(round(record.count * split, digits=0))
+  else if (split > 1)
+    split.records <- as.numeric(round(split.records, digits = 0))
+
+  #default is to provide records for each
+  out.of.sample <- in.sample <- data <- x
+
+
+  if (!is.short)
+  {
+    in.sample <- window(x, end = tsp(x)[2] - (split.records/frequency(x)))
+    out.of.sample <- window(x, start = tsp(x)[2] - ((split.records - 1)/frequency(x)))
+  }
 
   if (!as.list) {
     output <- cbind(data = data, in.sample = in.sample, out.of.sample = out.of.sample)
@@ -50,6 +66,7 @@ ts.split <- function(x, split = 0.2, as.list = TRUE, ...)
     output <- list(data = data, in.sample = in.sample, out.of.sample = out.of.sample)
   }
   output <- structure(output, class = c("ts.split", class(output)))
+  attr(output, "is.short") <- is.short
   return(output)
 }
 
@@ -71,7 +88,7 @@ ts.split <- function(x, split = 0.2, as.list = TRUE, ...)
 #' is.ts.split(x.split)
 is.ts.split <- function(x)
 {
-  return(inherits(x, "ts.split"))
+  return(is(x, "ts.split"))
 }
 
 #' Modifies \code{ts.split} to a unified \code{data.frame} object
@@ -142,3 +159,75 @@ tidy.ts.split <- function(x, ...)
 {
   return(as.data.frame(x, ...))
 }
+
+#' Tests if a time series is short
+#'
+#' Used internally to determine the appropriate time series models to apply.
+#' Short time series will be modeled as non-seasonal and will be fit against
+#' simpler models.
+#'
+#' @param y univariate time series
+#' @param freq.multiple numeric. multiple of the frequency of x to be compared
+#'   against the length of x
+#'
+#' @export
+#'
+#' @importFrom stats frequency
+#'
+#' @examples
+#' library(forecastR)
+#' data('AirPassengers', package='datasets')
+#' print("Default Freq. Multiple:", package_options("short.ts.frequency.multiple"))
+#' ## [1] 2.25
+#' short.ts.test(AirPassengers) #returns FALSE
+#' short.ts.test(AirPassengers, 15.0) #returns TRUE
+short.ts.test <- function(y, freq.multiple = package_options("short.ts.frequency.multiple"))
+{
+  return((frequency(y) * freq.multiple) > length(y))
+}
+
+
+### template for short time series
+# y.ts <- short.ts(y, freq.multiple = 2.25)
+# y <- y.ts$y
+# fit <- sapply(fit, function(x) {
+#   if (is.ts(x))
+#     return(short.ts.inv(x, y.ts))
+#   return(x)
+# })
+### template for short time series
+
+# internal function to parse short time series
+#' @importFrom stats ts start tsp frequency
+short.ts <- function(y, freq.multiple = package_options("short.ts.frequency.multiple"))
+{
+  orig.y <- y
+  orig.freq <- as.numeric(frequency(y))
+  needs.transformed <- short.ts.test(y, freq.multiple)
+  if (needs.transformed)
+    y <- ts(as.numeric(y))
+  return(list(y = y, freq.multiple = freq.multiple, orig.freq = orig.freq,
+              orig.start = start(orig.y), orig.tsp = tsp(orig.y),
+              was.transformed = needs.transformed))
+}
+
+
+#' @importFrom stats ts tsp
+short.ts.inv <- function(y.short.ts, x.ts = NULL, ...)
+{
+  if (!is.null(x.ts) && !is.ts(x.ts))
+    stop('`x.ts` must be `ts` object.')
+  ts.tsp <- y.short.ts$orig.tsp
+  if (!is.list(y.short.ts))
+    ts.tsp <- tsp(y.short.ts)
+
+  if (is.null(x.ts))
+    x.ts <- y.short.ts$y
+
+  ts.start <- ts.tsp[1]
+  ts.freq <- ts.tsp[3]
+
+  return(ts(as.numeric(x.ts), start = ts.start, frequency = ts.freq))
+}
+
+

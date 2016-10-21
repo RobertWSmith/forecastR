@@ -4,14 +4,12 @@
 \alias{bats}
 \title{BATS model fitting and updates}
 \usage{
-bats(y, ..., model.name = "bats")
+bats(y, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
 
 \item{...}{additional argument for model function}
-
-\item{model.name}{name of model specialization}
 }
 \value{
 \code{tsm} object
@@ -28,5 +26,8 @@ fit2 <- bats(AirPassengers, lambda=0)
 }
 \seealso{
 \code{\link[forecast]{bats}}
+
+Other Time Series Models: \code{\link{arfima}},
+  \code{\link{arima}}, \code{\link{ets}}
 }
 
