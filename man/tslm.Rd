@@ -4,10 +4,12 @@
 \alias{tslm}
 \title{Time Series Linear Model}
 \usage{
-tslm(y, ...)
+tslm(y, model = NULL, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
+
+\item{model}{previously fit model}
 
 \item{...}{additional arguments to \code{\link[forecast]{tslm}}}
 }

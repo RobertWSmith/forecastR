@@ -4,10 +4,12 @@
 \alias{stlm}
 \title{STLM model fitting and updates}
 \usage{
-stlm(y, ...)
+stlm(y, model = "ZZN", ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
+
+\item{model}{previously fit model}
 
 \item{...}{additional argument for model function}
 }
@@ -25,6 +27,6 @@ fit <- stlm(AirPassengers)
 fit2 <- stlm(AirPassengers, lambda=0)
 }
 \seealso{
-\code{\link[forecast]{tbats}}
+\code{\link[forecast]{stlm}}
 }
 

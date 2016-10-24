@@ -48,6 +48,60 @@ ts.model.fit <- function(y, ts.model.type = package_options('autofit.models'), .
 }
 
 
+#' Autofit Time Series models attempting multiple standardized transformations
+#'
+#' @describeIn ts.model.fit Autofit
+#'
+#' @param lambda list of values to pass to \code{lambda} values
+#' @param alpha numeric. significance threshold for \code{\link[forecast]{dm.test}}
+#'   which determines if transformation makes for an improved model
+#'
+#' @export
+ts.model.autofit <- function(y, ts.model.type = package_options('autofit.models'),
+                             lambda = list(NULL, 0, forecast::BoxCox.lambda(y, "loglik")),
+                             alpha = 0.05, ...)
+{
+  ts.model.type <- match.arg(ts.model.type)
+
+  if (!(ts.model.type %in% c("bats", "tbats")))
+  {
+    lambda <- as.list(lambda)
+    if (length(y) > 2.25 * frequency(y))
+      lambda[[length(lambda)+1]] <- forecast::BoxCox.lambda(y)
+    lambda <- unique(lambda)
+    outputs <- vector("list", length=length(lambda))
+    best.fit <- best.lambda <- NULL
+
+    for (i in 1:length(lambda))
+    {
+      fit <- ts.model.fit(y, ts.model.type = ts.model.type, lambda = lambda[[i]], ...)
+      outputs[[i]] <- fit
+      if (is.null(best.fit))
+      {
+        best.fit <- fit
+        best.lambda <- lambda[[i]]
+      } else
+      {
+        dmt <- try({forecast::dm.test(residuals(best.fit), residuals(fit), alternative = "greater")},
+                   silent = TRUE)
+        if (!inherits(dmt, "try-error"))
+        {
+          if (dmt$p.value < alpha)
+          {
+            best.fit <- fit
+            best.lambda <- lambda[[i]]
+          }
+        }
+      }
+    }
+  } else
+  {
+    best.fit <- ts.model.fit(y, ts.model.type = ts.model.type, ...)
+  }
+  return(best.fit)
+}
+
+
 #' Update Generic Time Series Model Fit for Package Models
 #'
 #' @param y \code{ts}. Univariate Time Series
@@ -94,7 +148,10 @@ ts.model.refit <- function(y, model, ...)
   kw <- pryr::dots(...)
   y <- as.ts(y)
   kw$y <- quote(y)
-  kw$model <- model(model)
+  mdl <- (model(model))
+  if (model$function.name %in% c("stlm", "aaaa"))
+    mdl <- quote(mdl)
+  kw$model <- mdl
   return(do.call(model$function.name, kw))
 }
 
@@ -148,7 +205,7 @@ ts.multimodel.fit <- function(y, split = 0.2, oos.h = 18L, alpha = 0.05,
   names(models) <- ts.model.types
 
   for (func in ts.model.types)
-    models[[func]] <- ts.model.fit(y.split$in.sample, ts.model.type = func, ...)
+    models[[func]] <- ts.model.autofit(y.split$in.sample, ts.model.type = func, ...)
 
   base <- .parse.forecasts(models, y.split = y.split, oos.h = oos.h, oos.fits = short.ts)
   return(base)
