@@ -23,15 +23,22 @@ NULL
 
 
 #' @importFrom settings options_manager inlist inrange
-PACKAGE_OPTIONS <- settings::options_manager(autofit.models = sort(unique(c("arima",
-  "arfima", "bats", "ets", "nnetar", "stlm", "tbats", "tslm"))),
-  autofit.models.short.ts = sort(unique(c("arima", "ets"))),
-  short.ts.frequency.multiple = 2.25, ts.fields = list(arima = c("residuals",
-    "x"), arfima = c("residuals", "x", "fitted"), bats = c("errors",
-    "y", "fitted.values"), ets = c("residuals", "x", "fitted"),
-    nnetar = c("residuals", "x", "fitted"), stlm = c("residuals",
-      "x", "fitted"), tbats = c("errors", "y", "fitted.values"),
-    tslm = c("residuals", "fitted.values")))
+PACKAGE_OPTIONS <- settings::options_manager(
+  autofit.models = c("arfima", "arima", "bats", "ets", "nnetar", "stlm", "tbats", "tslm"),
+  autofit.models.short.ts = c("arima", "ets"),
+  short.ts.frequency.multiple = 2.25,
+  ts.fields = list(
+    arima = c("residuals", "x"),
+    arfima = c("residuals", "x", "fitted"),
+    bats = c("errors", "y", "fitted.values"),
+    ets = c("residuals", "x", "fitted"),
+    nnetar = c("residuals", "x", "fitted"),
+    stlm = c("residuals", "x", "fitted"),
+    tbats = c("errors", "y", "fitted.values"),
+    tslm = c("residuals", "fitted.values"),
+    forecast = c("mean", "lower", "upper", "x", "fitted", "residuals")
+    )
+  )
 
 # , .allowed = list( autofit.models =
 # settings::inlist('arima', 'arfima', 'bats', 'ets',

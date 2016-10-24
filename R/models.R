@@ -13,14 +13,8 @@
 #' \code{\link[forecast]{auto.arima}} to allow unified interface.
 #'
 #' @param y Univariate Time Series
-#' @param d integer. Number of non seasonal differences. See \code{\link[forecast]{auto.arima}}
-#' @param D integer. Number of seasonal differences. See \code{\link[forecast]{auto.arima}}
-#' @param stationary logical. Passed to \code{\link[forecast]{auto.arima}} if
-#'   \code{model} or \code{order} argument not passed as keyword arguments.
-#' @param seasonal logical. Defualt determined by checking length of time series `y`,
-#'   if using monthly data (frequency = 12), `y` must have more than 27 records to
-#'   fit a seasonal model.
-#' @param order numeric vector. non-seasonal order of the time series.
+#' @param lambda optional, if null ignored otherwise treated as the Box-Cox
+#'   parameter
 #' @param model \code{tsm}, \code{\link[forecast]{Arima}} or
 #'   \code{\link[stats]{arima}} object to be refit
 #' @param order integer vector. Non-seasonal ARIMA order
@@ -33,7 +27,6 @@
 #' @seealso \code{\link[forecast]{Arima}} and \code{\link[forecast]{auto.arima}}
 #'
 #' @importFrom forecast Arima auto.arima
-#' @importFrom pryr dots
 #'
 #' @family Time Series Models
 #'
@@ -45,28 +38,28 @@
 #' fit <- arima(AirPassengers)
 #' fit2 <- arima(AirPassengers, D = 1)
 #' fit3 <- arima(AirPassengers, lambda = 0)
-arima <- function(y, d = NA, D = NA, stationary = TRUE, seasonal = (length(y) >
-  2.25 * frequency(y)), model = NULL, order = NULL, ...)
+arima <- function(y, lambda = NULL, model = NULL, order = NULL, ...)
   {
   model.name <- "arima"
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
-  kw <- dots(...)
+
   if (!is.null(model))
   {
-    mdl <- model(model)
-    fit <- forecast::Arima(y, model = mdl, ...)
+    fit <- forecast::Arima(y, model = model(model), lambda = lambda, ...)
   } else if (!is.null(order))
   {
-    fit <- forecast::Arima(y, order = order, ...)
+    fit <- forecast::Arima(y, order = order, lambda = lambda, ...)
   } else
   {
-    D <- ifelse(seasonal, 1, 0)
-    fit <- forecast::auto.arima(y, d = d, D = D, stationary = stationary,
-      seasonal = seasonal, ...)
+    fit <- forecast::auto.arima(y, lambda = lambda, ...)
   }
-  for (nm in package_options("ts.fields")[model.name][[1]]) fit[[nm]] <- short.ts.inv(y.ts,
-    as.ts(fit[[nm]]))
+
+  for (nm in package_options("ts.fields")[[model.name]])
+  {
+    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+  }
+
   output <- tsm(model.name, fit)
   return(output)
 }
@@ -78,7 +71,6 @@ arima <- function(y, d = NA, D = NA, stationary = TRUE, seasonal = (length(y) >
 #' allow unified interface.
 #'
 #' @param y Univariate Time Series
-#' @param lambda numeric. Box-Cox transformation parameter.
 #' @param model \code{tsm} object, used to refit model
 #' @param ... additional argument for model function
 #'
@@ -87,7 +79,6 @@ arima <- function(y, d = NA, D = NA, stationary = TRUE, seasonal = (length(y) >
 #' @seealso \code{\link[forecast]{arfima}}
 #'
 #' @importFrom forecast arfima
-#' @importFrom pryr dots
 #' @importFrom stats is.ts
 #'
 #' @family Time Series Models
@@ -98,40 +89,23 @@ arima <- function(y, d = NA, D = NA, stationary = TRUE, seasonal = (length(y) >
 #' library(forecastR)
 #' data('AirPassengers', package = 'datasets')
 #' fit <- arfima(AirPassengers)
-<<<<<<< HEAD
 #' fit2 <- arfima(AirPassengers, lambda = 0)
-arfima <- function(y, ...)
+arfima <- function(y, model = NULL, ...)
 {
   model.name <- "arfima"
-  kw <- pryr::dots(...)
-  kw$model <- NULL
-  y.ts <- short.ts(y, freq.multiple = 2.25)
-  y <- y.ts$y
-  kw$y <- quote(y)
-  fit <- do.call(forecast::arfima, kw)
-  for (nm in package_options("ts.fields")[model.name][[1]])
-=======
-#' fit2 <- arfima(AirPassengers, lambda=0)
-arfima <- function(y, lambda=NULL, model=NULL, ...)
-{
-  model.name <- 'arfima'
-
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
 
   if (!is.null(model))
-    lambda <- model(model)$lambda
-
-  fit <- try({forecast::arfima(y, lambda=lambda, ...)}, silent=TRUE)
-  if (inherits(fit, "try-error"))
   {
-    fit <- forecast::arfima(y, ...)
+    lambda <- model(model)$lambda
   }
 
-
-  for (nm in package_options('ts.fields')[model.name][[1]])
->>>>>>> origin/master
+  fit <- forecast::arfima(y, ...)
+  for (nm in package_options("ts.fields")[[model.name]])
+  {
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+  }
   output <- tsm(model.name, fit)
   return(output)
 }
@@ -143,6 +117,8 @@ arfima <- function(y, lambda=NULL, model=NULL, ...)
 #' allow unified interface.
 #'
 #' @param y Univariate Time Series
+#' @param model previously fitted model object.
+#' @param lambda not used, in place to ensure uniform API
 #' @param ... additional argument for model function
 #'
 #' @return \code{tsm} object
@@ -150,7 +126,6 @@ arfima <- function(y, lambda=NULL, model=NULL, ...)
 #' @seealso \code{\link[forecast]{bats}}
 #'
 #' @importFrom forecast bats
-#' @importFrom pryr dots
 #' @importFrom stats is.ts
 #'
 #' @export
@@ -162,14 +137,16 @@ arfima <- function(y, lambda=NULL, model=NULL, ...)
 #' data('AirPassengers', package = 'datasets')
 #' fit <- bats(AirPassengers)
 #' fit2 <- bats(AirPassengers, lambda = 0)
-bats <- function(y, ...)
+bats <- function(y, model = NULL, lambda = NULL, ...)
 {
   model.name <- "bats"
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
-  fit <- forecast::bats(y, ...)
-  for (nm in package_options("ts.fields")[model.name][[1]])
+  fit <- forecast::bats(y, model = model(model), ...)
+  for (nm in package_options("ts.fields")[[model.name]])
+  {
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+  }
   output <- tsm(model.name, fit)
   return(output)
 }
@@ -181,6 +158,10 @@ bats <- function(y, ...)
 #' allow unified interface.
 #'
 #' @param y Univariate Time Series
+#' @param model either a string identifying model method, or previously fitted
+#'   model object. See \code{\link[forecast]{ets}} for more information
+#' @param allow.multiplicative.trend logical. should the model consider
+#'   multiplicative exponential smoothing models?
 #' @param ... additional argument for model function
 #'
 #' @return \code{tsm} object
@@ -188,7 +169,6 @@ bats <- function(y, ...)
 #' @seealso \code{\link[forecast]{ets}}
 #'
 #' @importFrom forecast ets
-#' @importFrom pryr dots
 #' @importFrom stats is.ts
 #'
 #' @family Time Series Models
@@ -200,17 +180,17 @@ bats <- function(y, ...)
 #' data('AirPassengers', package = 'datasets')
 #' fit <- ets(AirPassengers)
 #' fit2 <- ets(AirPassengers, lambda = 0)
-ets <- function(y, ...)
+ets <- function(y, model = "ZZZ", allow.multiplicative.trend = TRUE, ...)
 {
   model.name <- "ets"
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
-  kw <- pryr::dots(...)
-  kw$allow.multiplicative.trend <- TRUE
-  kw$y <- quote(y)
-  fit <- do.call(forecast::ets, kw)
-  for (nm in package_options("ts.fields")[model.name][[1]])
+  fit <- forecast::ets(y, model = model(model),
+                       allow.multiplicative.trend = allow.multiplicative.trend, ...)
+  for (nm in package_options("ts.fields")[[model.name]])
+  {
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+  }
   output <- tsm(model.name, fit)
   return(output)
 }
@@ -222,14 +202,14 @@ ets <- function(y, ...)
 #' allow unified interface.
 #'
 #' @param y Univariate Time Series
+#' @param model previously fit model object
 #' @param ... additional argument for model function
 #'
 #' @return \code{tsm} object
 #'
-#' @seealso \code{\link[forecast]{nnetar}} \code{\link[forecastR]{nnetar.w.decay}}
+#' @seealso \code{\link[forecast]{nnetar}}
 #'
 #' @importFrom forecast nnetar
-#' @importFrom pryr dots
 #' @importFrom stats frequency tsp tsp<- ts is.ts
 #'
 #' @export
@@ -260,22 +240,19 @@ ets <- function(y, ...)
 #'  ), start = c(1957,1))
 #'
 #' autoplot(vals, na.rm = TRUE)
-nnetar <- function(y, ...)
+nnetar <- function(y, model = NULL, ...)
 {
   model.name <- "nnetar"
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
-  fit <- forecast::nnetar(y, ...)
-  for (nm in package_options("ts.fields")[model.name][[1]])
+  fit <- forecast::nnetar(y, model = model(model), ...)
+  for (nm in package_options("ts.fields")[[model.name]])
+  {
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+  }
   output <- tsm(model.name, fit)
   return(output)
 }
-
-#' @describeIn nnetar NNETAR w/ default decay
-#' @importFrom pryr partial
-#' @export
-nnetar.w.decay <- pryr::partial(nnetar, decay = 0.01, model.name = "nnetar.w.decay")
 
 
 #' STLM model fitting and updates
@@ -284,11 +261,7 @@ nnetar.w.decay <- pryr::partial(nnetar, decay = 0.01, model.name = "nnetar.w.dec
 #' allow unified interface.
 #'
 #' @param y Univariate Time Series
-<<<<<<< HEAD
 #' @param model previously fit model object, currently not used
-=======
-#' @param model previously fit model
->>>>>>> origin/master
 #' @param ... additional argument for model function
 #'
 #' @return \code{tsm} object
@@ -296,7 +269,6 @@ nnetar.w.decay <- pryr::partial(nnetar, decay = 0.01, model.name = "nnetar.w.dec
 #' @seealso \code{\link[forecast]{stlm}}
 #'
 #' @importFrom forecast tbats
-#' @importFrom pryr dots
 #' @importFrom stats is.ts
 #'
 #' @export
@@ -305,37 +277,17 @@ nnetar.w.decay <- pryr::partial(nnetar, decay = 0.01, model.name = "nnetar.w.dec
 #' library(forecastR)
 #' data('AirPassengers', package = 'datasets')
 #' fit <- stlm(AirPassengers)
-<<<<<<< HEAD
 #' fit2 <- stlm(AirPassengers, lambda = 0)
-stlm <- function(y, model = NULL, ...)
-=======
-#' fit2 <- stlm(AirPassengers, lambda=0)
 stlm <- function(y, model = "ZZN", ...)
->>>>>>> origin/master
 {
   model.name <- "stlm"
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
-  kw <- dots(...)
-<<<<<<< HEAD
-  if ("model" %in% names(kw))
-  {
-    kw$y <- y
-    kw$etsmodel <- kw$model
-    kw$model <- NULL
-    fit <- do.call(forecast::stlm, kw)
-  } else
-  {
-    fit <- forecast::stlm(y, ...)
-  }
-  for (nm in package_options("ts.fields")[model.name][[1]])
-=======
-
   fit <- forecast::stlm(y, ...)
-
-  for (nm in package_options('ts.fields')[model.name][[1]])
->>>>>>> origin/master
+  for (nm in package_options("ts.fields")[[model.name]])
+  {
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+  }
   output <- tsm(model.name, fit)
   return(output)
 }
@@ -347,6 +299,8 @@ stlm <- function(y, model = "ZZN", ...)
 #' allow unified interface.
 #'
 #' @param y Univariate Time Series
+#' @param lambda not used, in place to ensure uniform API
+#' @param model previously fit model
 #' @param ... additional argument for model function
 #'
 #' @return \code{tsm} object
@@ -354,7 +308,6 @@ stlm <- function(y, model = "ZZN", ...)
 #' @seealso \code{\link[forecast]{tbats}}
 #'
 #' @importFrom forecast tbats
-#' @importFrom pryr dots
 #' @importFrom stats is.ts
 #'
 #' @export
@@ -364,15 +317,17 @@ stlm <- function(y, model = "ZZN", ...)
 #' data('AirPassengers', package = 'datasets')
 #' fit <- nnetar(AirPassengers)
 #' fit2 <- nnetar(AirPassengers, lambda = 0)
-tbats <- function(y, ...)
+tbats <- function(y, lambda = NULL, model = NULL, ...)
 {
   model.name <- "tbats"
   y.orig <- y
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
-  fit <- forecast::tbats(y, ...)
-  for (nm in package_options("ts.fields")[model.name][[1]])
+  fit <- forecast::tbats(y, model = model(model), ...)
+  for (nm in package_options("ts.fields")[[model.name]])
+  {
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+  }
   output <- tsm(model.name, fit)
   return(output)
 }
@@ -392,7 +347,6 @@ tbats <- function(y, ...)
 #' @seealso \code{\link[forecast]{tslm}}
 #'
 #' @importFrom forecast tslm
-#' @importFrom pryr dots
 #' @importFrom stats as.formula
 #'
 #' @export
@@ -401,24 +355,28 @@ tbats <- function(y, ...)
 #' library(forecastR)
 #' data('AirPassengers', package = 'datasets')
 #' fit <- nnetar(AirPassengers)
-<<<<<<< HEAD
 #' fit2 <- nnetar(AirPassengers, lambda = 0)
-=======
-#' fit2 <- nnetar(AirPassengers, lambda=0)
->>>>>>> origin/master
 tslm <- function(y, model = NULL, ...)
 {
   model.name <- "tslm"
-  kw <- dots(...)
+
   y.orig <- y
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
-  fmla.txt <- "y ~ trend + season"
+
   if (y.ts$was.transformed)
+  {
     fmla.txt <- "y ~ trend"
+  } else
+  {
+    fmla.txt <- "y ~ trend + season"
+  }
+
   fit <- forecast::tslm(as.formula(fmla.txt), ...)
-  for (nm in package_options("ts.fields")[model.name][[1]])
+  for (nm in package_options("ts.fields")[[model.name]])
+  {
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+  }
   output <- tsm(model.name, fit)
   return(output)
 }

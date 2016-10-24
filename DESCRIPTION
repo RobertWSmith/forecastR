@@ -16,21 +16,21 @@ Imports:
     forecast,
     car,
     broom,
-    pryr,
     opera,
     TSA,
     meboot
 Suggests:
     testthat,
     ggplot2
-LinkingTo:
-    Rcpp
+LinkingTo: Rcpp
 RoxygenNote: 5.0.1
 Collate:
     'autocorrelation_tests.R'
-    'models.R'
-    'autofit.R'
     'forecast.R'
+    'models.R'
+    'mixture_model_fit.R'
+    'model_fit.R'
+    'multimodel_fit.R'
     'pkgname.R'
     'transformations.R'
     'tsm.R'

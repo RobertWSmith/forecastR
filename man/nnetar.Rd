@@ -2,15 +2,14 @@
 % Please edit documentation in R/models.R
 \name{nnetar}
 \alias{nnetar}
-\alias{nnetar.w.decay}
 \title{NNETAR model fitting and updates}
 \usage{
-nnetar(y, ...)
-
-nnetar.w.decay(...)
+nnetar(y, model = NULL, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
+
+\item{model}{previously fit model object}
 
 \item{...}{additional argument for model function}
 }
@@ -21,10 +20,6 @@ nnetar.w.decay(...)
 Wrapper for forecast package functions \code{\link[forecast]{nnetar}} to
 allow unified interface.
 }
-\section{Functions}{
-\itemize{
-\item \code{nnetar.w.decay}: NNETAR w/ default decay
-}}
 \examples{
 library(ggplot2)
 library(forecastR)
@@ -53,6 +48,6 @@ vals <- window(cbind(
 autoplot(vals, na.rm = TRUE)
 }
 \seealso{
-\code{\link[forecast]{nnetar}} \code{\link[forecastR]{nnetar.w.decay}}
+\code{\link[forecast]{nnetar}}
 }
 

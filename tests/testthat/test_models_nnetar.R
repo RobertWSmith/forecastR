@@ -2,10 +2,13 @@ context("Testing nnetar `models.R`.")
 test_that("`nnetar` function", {
   library(forecast)
   data("AirPassengers", package = "datasets")
+
   a <- forecastR::nnetar(AirPassengers)
   aa <- forecast::nnetar(AirPassengers)
+
   a.mdl <- model(a)
   expect_is(a.mdl, class(aa))
+
   expect_equal(start(a.mdl$x), start(AirPassengers))
   expect_equal(length(a.mdl$x), length(AirPassengers))
   expect_equal(frequency(a.mdl$x), frequency(AirPassengers))
@@ -15,10 +18,13 @@ test_that("`nnetar` function", {
   expect_equal(start(fitted(a.mdl)), start(AirPassengers))
   expect_equal(length(fitted(a.mdl)), length(AirPassengers))
   expect_equal(frequency(fitted(a.mdl)), frequency(AirPassengers))
-  a <- forecastR::nnetar.w.decay(AirPassengers)
+
+  a <- forecastR::nnetar(AirPassengers, decay = 0.01)
   aa <- forecast::nnetar(AirPassengers, decay = 0.01)
+
   a.mdl <- model(a)
   expect_is(a.mdl, class(aa))
+
   expect_equal(start(a.mdl$x), start(AirPassengers))
   expect_equal(length(a.mdl$x), length(AirPassengers))
   expect_equal(frequency(a.mdl$x), frequency(AirPassengers))

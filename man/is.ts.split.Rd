@@ -21,7 +21,7 @@ library(forecastR)
 x <- ts(1:100, freq=12)
 sample.frac <- 0.2
 !is.ts.split(x)
-x.split <- ts.split(x, split.frac = sample.frac)
+x.split <- ts.split(x, split = sample.frac)
 is.ts.split(x.split)
 }
 

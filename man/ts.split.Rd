@@ -4,8 +4,7 @@
 \alias{ts.split}
 \title{Splits time series into train & test subsets}
 \usage{
-ts.split(x, split = 0.2, as.list = TRUE,
-  short.ts.multiple = package_options("short.ts.frequency.multiple"), ...)
+ts.split(x, split = 0.2, as.list = TRUE, short.ts.multiple = NULL, ...)
 }
 \arguments{
 \item{x}{Univariate Time Series}
@@ -33,8 +32,8 @@ Splits time series into train & test subsets
 \examples{
 library(forecastR)
 x <- ts(1:100, freq=12)
-frac <- 0.2
-x.split <- ts.split(x, split.frac = frac)
+frac <- 0.20
+x.split <- ts.split(x, split = frac)
 
 x.data <- x.split$data
 x.in.sample <- x.split$in.sample
@@ -42,5 +41,12 @@ x.out.of.sample <- x.split$out.of.sample
 
 length(na.omit(x.out.of.sample)) == (length(x.data) * frac)
 x.data == c(na.omit(x.in.sample), na.omit(x.out.of.sample))
+
+data("AirPassengers", package="datasets")
+split <- 24L
+ap.split <- ts.split(AirPassengers, split = split)
+length(ap.split$data) == length(AirPassengers)
+length(ap.split$out.of.sample) == split
+length(ap.split$in.sample) == (length(AirPassengers) - split)
 }
 

@@ -4,31 +4,18 @@
 \alias{arima}
 \title{ARIMA model fitting and updates}
 \usage{
-arima(y, d = NA, D = NA, stationary = TRUE, seasonal = (length(y) > 2.25
-  * frequency(y)), model = NULL, order = NULL, ...)
+arima(y, lambda = NULL, model = NULL, order = NULL, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
 
-\item{d}{integer. Number of non seasonal differences. See \code{\link[forecast]{auto.arima}}}
-
-\item{D}{integer. Number of seasonal differences. See \code{\link[forecast]{auto.arima}}}
-
-\item{stationary}{logical. Passed to \code{\link[forecast]{auto.arima}} if
-\code{model} or \code{order} argument not passed as keyword arguments.}
-
-\item{seasonal}{logical. Defualt determined by checking length of time series `y`,
-if using monthly data (frequency = 12), `y` must have more than 27 records to
-fit a seasonal model.}
+\item{lambda}{optional, if null ignored otherwise treated as the Box-Cox
+parameter}
 
 \item{model}{\code{tsm}, \code{\link[forecast]{Arima}} or
 \code{\link[stats]{arima}} object to be refit}
 
-<<<<<<< HEAD
 \item{order}{integer vector. Non-seasonal ARIMA order}
-=======
-\item{order}{numeric vector. non-seasonal order of the time series.}
->>>>>>> origin/master
 
 \item{...}{additional argument for model function. See
 \code{\link[forecast]{Arima}} and \code{\link[forecast]{auto.arima}}

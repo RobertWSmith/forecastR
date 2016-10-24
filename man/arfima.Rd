@@ -4,12 +4,10 @@
 \alias{arfima}
 \title{ARFIMA model fitting and updates}
 \usage{
-arfima(y, lambda = NULL, model = NULL, ...)
+arfima(y, model = NULL, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
-
-\item{lambda}{numeric. Box-Cox transformation parameter.}
 
 \item{model}{\code{tsm} object, used to refit model}
 
