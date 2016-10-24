@@ -23,7 +23,8 @@ Imports:
 Suggests:
     testthat,
     ggplot2
-LinkingTo: Rcpp
+LinkingTo:
+    Rcpp
 RoxygenNote: 5.0.1
 Collate:
     'autocorrelation_tests.R'

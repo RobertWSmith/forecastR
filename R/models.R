@@ -20,6 +20,7 @@
 #' @param seasonal logical. Defualt determined by checking length of time series `y`,
 #'   if using monthly data (frequency = 12), `y` must have more than 27 records to
 #'   fit a seasonal model.
+#' @param order numeric vector. non-seasonal order of the time series.
 #' @param model \code{tsm}, \code{\link[forecast]{Arima}} or
 #'   \code{\link[stats]{arima}} object to be refit
 #' @param order integer vector. Non-seasonal ARIMA order
@@ -77,6 +78,8 @@ arima <- function(y, d = NA, D = NA, stationary = TRUE, seasonal = (length(y) >
 #' allow unified interface.
 #'
 #' @param y Univariate Time Series
+#' @param lambda numeric. Box-Cox transformation parameter.
+#' @param model \code{tsm} object, used to refit model
 #' @param ... additional argument for model function
 #'
 #' @return \code{tsm} object
@@ -95,6 +98,7 @@ arima <- function(y, d = NA, D = NA, stationary = TRUE, seasonal = (length(y) >
 #' library(forecastR)
 #' data('AirPassengers', package = 'datasets')
 #' fit <- arfima(AirPassengers)
+<<<<<<< HEAD
 #' fit2 <- arfima(AirPassengers, lambda = 0)
 arfima <- function(y, ...)
 {
@@ -106,6 +110,27 @@ arfima <- function(y, ...)
   kw$y <- quote(y)
   fit <- do.call(forecast::arfima, kw)
   for (nm in package_options("ts.fields")[model.name][[1]])
+=======
+#' fit2 <- arfima(AirPassengers, lambda=0)
+arfima <- function(y, lambda=NULL, model=NULL, ...)
+{
+  model.name <- 'arfima'
+
+  y.ts <- short.ts(y, freq.multiple = 2.25)
+  y <- y.ts$y
+
+  if (!is.null(model))
+    lambda <- model(model)$lambda
+
+  fit <- try({forecast::arfima(y, lambda=lambda, ...)}, silent=TRUE)
+  if (inherits(fit, "try-error"))
+  {
+    fit <- forecast::arfima(y, ...)
+  }
+
+
+  for (nm in package_options('ts.fields')[model.name][[1]])
+>>>>>>> origin/master
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
   output <- tsm(model.name, fit)
   return(output)
@@ -259,12 +284,16 @@ nnetar.w.decay <- pryr::partial(nnetar, decay = 0.01, model.name = "nnetar.w.dec
 #' allow unified interface.
 #'
 #' @param y Univariate Time Series
+<<<<<<< HEAD
 #' @param model previously fit model object, currently not used
+=======
+#' @param model previously fit model
+>>>>>>> origin/master
 #' @param ... additional argument for model function
 #'
 #' @return \code{tsm} object
 #'
-#' @seealso \code{\link[forecast]{tbats}}
+#' @seealso \code{\link[forecast]{stlm}}
 #'
 #' @importFrom forecast tbats
 #' @importFrom pryr dots
@@ -276,13 +305,19 @@ nnetar.w.decay <- pryr::partial(nnetar, decay = 0.01, model.name = "nnetar.w.dec
 #' library(forecastR)
 #' data('AirPassengers', package = 'datasets')
 #' fit <- stlm(AirPassengers)
+<<<<<<< HEAD
 #' fit2 <- stlm(AirPassengers, lambda = 0)
 stlm <- function(y, model = NULL, ...)
+=======
+#' fit2 <- stlm(AirPassengers, lambda=0)
+stlm <- function(y, model = "ZZN", ...)
+>>>>>>> origin/master
 {
   model.name <- "stlm"
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
   kw <- dots(...)
+<<<<<<< HEAD
   if ("model" %in% names(kw))
   {
     kw$y <- y
@@ -294,6 +329,12 @@ stlm <- function(y, model = NULL, ...)
     fit <- forecast::stlm(y, ...)
   }
   for (nm in package_options("ts.fields")[model.name][[1]])
+=======
+
+  fit <- forecast::stlm(y, ...)
+
+  for (nm in package_options('ts.fields')[model.name][[1]])
+>>>>>>> origin/master
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
   output <- tsm(model.name, fit)
   return(output)
@@ -360,7 +401,11 @@ tbats <- function(y, ...)
 #' library(forecastR)
 #' data('AirPassengers', package = 'datasets')
 #' fit <- nnetar(AirPassengers)
+<<<<<<< HEAD
 #' fit2 <- nnetar(AirPassengers, lambda = 0)
+=======
+#' fit2 <- nnetar(AirPassengers, lambda=0)
+>>>>>>> origin/master
 tslm <- function(y, model = NULL, ...)
 {
   model.name <- "tslm"

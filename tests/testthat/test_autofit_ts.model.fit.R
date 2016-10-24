@@ -13,6 +13,7 @@ test_that("`ts.model.fit` & `ts.model.refit` functions", {
     tmp.refit <- ts.model.refit(ap$data, model = tmp.mdl)
     mdl.fit[[func]] <- tmp.mdl
     mdl.refit[[func]] <- tmp.refit
+<<<<<<< HEAD
     ## testing that refit model has equivalent coefficients, with
     ## the exception of ARFIMA models, which do not currently
     ## support being refit
@@ -21,6 +22,14 @@ test_that("`ts.model.fit` & `ts.model.refit` functions", {
       nms <- names(tmp.mdl)
       expect_equal(coef(tmp.mdl)[nms], coef(tmp.refit)[nms], 
         info = func)
+=======
+
+    ## testing that refit model has equivalent coefficients, with the exception
+    ## of ARFIMA models, which do not currently support being refit
+    if (!(func %in% c("arfima", "stlm", "tslm")))
+    {
+      expect_equal(length(coef(tmp.mdl)), length(coef(tmp.refit)), info=func)
+>>>>>>> origin/master
     }
     # cleanup to ensure not retesting against old values inside
     # loop
@@ -31,6 +40,7 @@ test_that("`ts.model.fit` & `ts.model.refit` functions", {
   ## validate exact same model is returned by directly calling
   ## model functions
   aa <- arima(ap$in.sample)
+<<<<<<< HEAD
   expect_equal(coef(mdl.fit[["arima"]]), coef(aa))
   expect_equal(coef(mdl.refit[["arima"]]), coef(aa))
   # af <- arfima(ap$in.sample)
@@ -54,4 +64,24 @@ test_that("`ts.model.fit` & `ts.model.refit` functions", {
   # sl <- tslm(ap$in.sample)
   # expect_equal(coef(mdl.fit[['tslm']]), coef(sl))
   # expect_equal(coef(mdl.refit[['tslm']]), coef(sl))
+=======
+  expect_equal(length(coef(mdl.fit[['arima']])), length(coef(aa)))
+  expect_equal(length(coef(mdl.refit[['arima']])), length(coef(aa)))
+
+  ba <- bats(ap$in.sample)
+  expect_equal(length(coef(mdl.fit[['bats']])), length(coef(ba)))
+  expect_equal(length(coef(mdl.refit[['bats']])), length(coef(ba)))
+
+  et <- ets(ap$in.sample)
+  expect_equal(length(coef(mdl.fit[['ets']])), length(coef(et)))
+  expect_equal(length(coef(mdl.refit[['ets']])), length(coef(et)))
+
+  nn <- nnetar(ap$in.sample)
+  expect_equal(length(coef(mdl.fit[['nnetar']])), length(coef(nn)))
+  expect_equal(length(coef(mdl.refit[['nnetar']])), length(coef(nn)))
+
+  tb <- tbats(ap$in.sample)
+  expect_equal(length(coef(mdl.fit[['tbats']])), length(coef(tb)))
+  expect_equal(length(coef(mdl.refit[['tbats']])), length(coef(tb)))
+>>>>>>> origin/master
 })
