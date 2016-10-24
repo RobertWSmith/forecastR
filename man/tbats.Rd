@@ -20,9 +20,9 @@ allow unified interface.
 }
 \examples{
 library(forecastR)
-data('AirPassengers', package='datasets')
+data('AirPassengers', package = 'datasets')
 fit <- nnetar(AirPassengers)
-fit2 <- nnetar(AirPassengers, lambda=0)
+fit2 <- nnetar(AirPassengers, lambda = 0)
 }
 \seealso{
 \code{\link[forecast]{tbats}}

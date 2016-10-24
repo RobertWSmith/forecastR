@@ -1,8 +1,9 @@
 ## models.R
 
+
 .grab.func.name <- function()
 {
-  return(deparse(sys.calls()[[sys.nframe()-1]]))
+  return(deparse(sys.calls()[[sys.nframe() - 1]]))
 }
 
 
@@ -17,10 +18,11 @@
 #' @param stationary logical. Passed to \code{\link[forecast]{auto.arima}} if
 #'   \code{model} or \code{order} argument not passed as keyword arguments.
 #' @param seasonal logical. Defualt determined by checking length of time series `y`,
-#'   if using monthly data (frequency=12), `y` must have more than 27 records to
+#'   if using monthly data (frequency = 12), `y` must have more than 27 records to
 #'   fit a seasonal model.
 #' @param model \code{tsm}, \code{\link[forecast]{Arima}} or
 #'   \code{\link[stats]{arima}} object to be refit
+#' @param order integer vector. Non-seasonal ARIMA order
 #' @param ... additional argument for model function. See
 #'   \code{\link[forecast]{Arima}} and \code{\link[forecast]{auto.arima}}
 #'   for allowable named arguments and definitions
@@ -38,32 +40,32 @@
 #'
 #' @examples
 #' library(forecastR)
-#' data('AirPassengers', package='datasets')
+#' data('AirPassengers', package = 'datasets')
 #' fit <- arima(AirPassengers)
-#' fit2 <- arima(AirPassengers, D=1)
-#' fit3 <- arima(AirPassengers, lambda=0)
-arima <- function(y, d=NA, D=NA, stationary=TRUE, seasonal=(length(y)>2.25*frequency(y)),
-                  model = NULL, order = NULL, ...)
-{
-  model.name <- 'arima'
+#' fit2 <- arima(AirPassengers, D = 1)
+#' fit3 <- arima(AirPassengers, lambda = 0)
+arima <- function(y, d = NA, D = NA, stationary = TRUE, seasonal = (length(y) >
+  2.25 * frequency(y)), model = NULL, order = NULL, ...)
+  {
+  model.name <- "arima"
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
   kw <- dots(...)
   if (!is.null(model))
   {
     mdl <- model(model)
-    fit <- forecast::Arima(y, model=mdl, ...)
+    fit <- forecast::Arima(y, model = mdl, ...)
   } else if (!is.null(order))
   {
-    fit <- forecast::Arima(y, order=order, ...)
+    fit <- forecast::Arima(y, order = order, ...)
   } else
   {
     D <- ifelse(seasonal, 1, 0)
-    fit <- forecast::auto.arima(y, d=d, D=D, stationary=stationary, seasonal=seasonal, ...)
+    fit <- forecast::auto.arima(y, d = d, D = D, stationary = stationary,
+      seasonal = seasonal, ...)
   }
-  for (nm in package_options('ts.fields')[model.name][[1]])
-    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
-
+  for (nm in package_options("ts.fields")[model.name][[1]]) fit[[nm]] <- short.ts.inv(y.ts,
+    as.ts(fit[[nm]]))
   output <- tsm(model.name, fit)
   return(output)
 }
@@ -91,23 +93,20 @@ arima <- function(y, d=NA, D=NA, stationary=TRUE, seasonal=(length(y)>2.25*frequ
 #'
 #' @examples
 #' library(forecastR)
-#' data('AirPassengers', package='datasets')
+#' data('AirPassengers', package = 'datasets')
 #' fit <- arfima(AirPassengers)
-#' fit2 <- arfima(AirPassengers, lambda=0)
+#' fit2 <- arfima(AirPassengers, lambda = 0)
 arfima <- function(y, ...)
 {
-  model.name <- 'arfima'
+  model.name <- "arfima"
   kw <- pryr::dots(...)
   kw$model <- NULL
-
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
   kw$y <- quote(y)
   fit <- do.call(forecast::arfima, kw)
-
-  for (nm in package_options('ts.fields')[model.name][[1]])
+  for (nm in package_options("ts.fields")[model.name][[1]])
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
-
   output <- tsm(model.name, fit)
   return(output)
 }
@@ -135,23 +134,20 @@ arfima <- function(y, ...)
 #'
 #' @examples
 #' library(forecastR)
-#' data('AirPassengers', package='datasets')
+#' data('AirPassengers', package = 'datasets')
 #' fit <- bats(AirPassengers)
-#' fit2 <- bats(AirPassengers, lambda=0)
+#' fit2 <- bats(AirPassengers, lambda = 0)
 bats <- function(y, ...)
 {
-  model.name <- 'bats'
+  model.name <- "bats"
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
   fit <- forecast::bats(y, ...)
-
-  for (nm in package_options('ts.fields')[model.name][[1]])
+  for (nm in package_options("ts.fields")[model.name][[1]])
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
-
   output <- tsm(model.name, fit)
   return(output)
 }
-
 
 
 #' ETS model fitting and updates
@@ -176,22 +172,20 @@ bats <- function(y, ...)
 #'
 #' @examples
 #' library(forecastR)
-#' data('AirPassengers', package='datasets')
+#' data('AirPassengers', package = 'datasets')
 #' fit <- ets(AirPassengers)
-#' fit2 <- ets(AirPassengers, lambda=0)
+#' fit2 <- ets(AirPassengers, lambda = 0)
 ets <- function(y, ...)
 {
-  model.name <- 'ets'
+  model.name <- "ets"
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
   kw <- pryr::dots(...)
-  kw$allow.multiplicative.trend=TRUE
+  kw$allow.multiplicative.trend <- TRUE
   kw$y <- quote(y)
   fit <- do.call(forecast::ets, kw)
-
-  for (nm in package_options('ts.fields')[model.name][[1]])
+  for (nm in package_options("ts.fields")[model.name][[1]])
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
-
   output <- tsm(model.name, fit)
   return(output)
 }
@@ -218,49 +212,45 @@ ets <- function(y, ...)
 #' @examples
 #' library(ggplot2)
 #' library(forecastR)
-#' data('AirPassengers', package='datasets')
+#' data('AirPassengers', package = 'datasets')
 #' ap.split <- ts.split(AirPassengers)
 #' out.sample.len <- length(ap.split$out.of.sample)
 #'
 #' #base fit
 #' fit <- nnetar(ap.split$in.sample)
 #' #log transformation
-#' fit2 <- nnetar(ap.split$in.sample, lambda=0)
+#' fit2 <- nnetar(ap.split$in.sample, lambda = 0)
 #' #log transformation w/ nnet decay parameter
-#' fit3 <- nnetar(ap.split$in.sample, lambda=0, decay=0.01)
+#' fit3 <- nnetar(ap.split$in.sample, lambda = 0, decay = 0.01)
 #'
-#' fcst <- forecast(fit, h=out.sample.len)
-#' fcst2 <- forecast(fit2, h=out.sample.len)
-#' fcst3 <- forecast(fit3, h=out.sample.len)
+#' fcst <- forecast(fit, h = out.sample.len)
+#' fcst2 <- forecast(fit2, h = out.sample.len)
+#' fcst3 <- forecast(fit3, h = out.sample.len)
 #'
 #' vals <- window(cbind(
-#'  data=ap.split$data,
-#'  base=fcst$mean,
-#'  lambda=fcst2$mean,
-#'  decay=fcst3$mean
-#'  ), start=c(1957,1))
+#'  data = ap.split$data,
+#'  base = fcst$mean,
+#'  lambda = fcst2$mean,
+#'  decay = fcst3$mean
+#'  ), start = c(1957,1))
 #'
-#' autoplot(vals, na.rm=TRUE)
+#' autoplot(vals, na.rm = TRUE)
 nnetar <- function(y, ...)
 {
-  model.name <- 'nnetar'
+  model.name <- "nnetar"
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
   fit <- forecast::nnetar(y, ...)
-
-  for (nm in package_options('ts.fields')[model.name][[1]])
+  for (nm in package_options("ts.fields")[model.name][[1]])
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
-
   output <- tsm(model.name, fit)
   return(output)
 }
 
-
-
 #' @describeIn nnetar NNETAR w/ default decay
 #' @importFrom pryr partial
 #' @export
-nnetar.w.decay <- pryr::partial(nnetar, decay=0.01, model.name="nnetar.w.decay")
+nnetar.w.decay <- pryr::partial(nnetar, decay = 0.01, model.name = "nnetar.w.decay")
 
 
 #' STLM model fitting and updates
@@ -269,6 +259,7 @@ nnetar.w.decay <- pryr::partial(nnetar, decay=0.01, model.name="nnetar.w.decay")
 #' allow unified interface.
 #'
 #' @param y Univariate Time Series
+#' @param model previously fit model object, currently not used
 #' @param ... additional argument for model function
 #'
 #' @return \code{tsm} object
@@ -283,31 +274,31 @@ nnetar.w.decay <- pryr::partial(nnetar, decay=0.01, model.name="nnetar.w.decay")
 #'
 #' @examples
 #' library(forecastR)
-#' data('AirPassengers', package='datasets')
+#' data('AirPassengers', package = 'datasets')
 #' fit <- stlm(AirPassengers)
-#' fit2 <- stlm(AirPassengers, lambda=0)
-stlm <- function(y, ...)
+#' fit2 <- stlm(AirPassengers, lambda = 0)
+stlm <- function(y, model = NULL, ...)
 {
-  model.name <- 'stlm'
+  model.name <- "stlm"
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
   kw <- dots(...)
-
-  if ("model" %in% names(kw)) {
+  if ("model" %in% names(kw))
+  {
     kw$y <- y
     kw$etsmodel <- kw$model
     kw$model <- NULL
     fit <- do.call(forecast::stlm, kw)
-  } else {
+  } else
+  {
     fit <- forecast::stlm(y, ...)
   }
-
-  for (nm in package_options('ts.fields')[model.name][[1]])
+  for (nm in package_options("ts.fields")[model.name][[1]])
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
-
   output <- tsm(model.name, fit)
   return(output)
 }
+
 
 #' TBATS model fitting and updates
 #'
@@ -329,20 +320,18 @@ stlm <- function(y, ...)
 #'
 #' @examples
 #' library(forecastR)
-#' data('AirPassengers', package='datasets')
+#' data('AirPassengers', package = 'datasets')
 #' fit <- nnetar(AirPassengers)
-#' fit2 <- nnetar(AirPassengers, lambda=0)
+#' fit2 <- nnetar(AirPassengers, lambda = 0)
 tbats <- function(y, ...)
 {
-  model.name <- 'tbats'
+  model.name <- "tbats"
   y.orig <- y
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
   fit <- forecast::tbats(y, ...)
-
-  for (nm in package_options('ts.fields')[model.name][[1]])
+  for (nm in package_options("ts.fields")[model.name][[1]])
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
-
   output <- tsm(model.name, fit)
   return(output)
 }
@@ -354,6 +343,7 @@ tbats <- function(y, ...)
 #' allow unified interface.
 #'
 #' @param y Univariate Time Series
+#' @param model previously fit model
 #' @param ... additional arguments to \code{\link[forecast]{tslm}}
 #'
 #' @return \code{tsm} object
@@ -368,29 +358,22 @@ tbats <- function(y, ...)
 #'
 #' @examples
 #' library(forecastR)
-#' data('AirPassengers', package='datasets')
+#' data('AirPassengers', package = 'datasets')
 #' fit <- nnetar(AirPassengers)
-#' fit2 <- nnetar(AirPassengers, lambda=0)
-tslm <- function(y, ...)
+#' fit2 <- nnetar(AirPassengers, lambda = 0)
+tslm <- function(y, model = NULL, ...)
 {
-  model.name <- 'tslm'
-
+  model.name <- "tslm"
   kw <- dots(...)
   y.orig <- y
   y.ts <- short.ts(y, freq.multiple = 2.25)
   y <- y.ts$y
-
   fmla.txt <- "y ~ trend + season"
   if (y.ts$was.transformed)
     fmla.txt <- "y ~ trend"
-
   fit <- forecast::tslm(as.formula(fmla.txt), ...)
-
-  for (nm in package_options('ts.fields')[model.name][[1]])
+  for (nm in package_options("ts.fields")[model.name][[1]])
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
-
   output <- tsm(model.name, fit)
   return(output)
 }
-
-

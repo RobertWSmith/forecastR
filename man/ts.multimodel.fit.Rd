@@ -33,12 +33,12 @@ Error returned is defined as `error <- estimate - actual`.
 \examples{
 library(ggplot2)
 library(forecastR)
-data('AirPassengers', package='datasets')
+data('AirPassengers', package = 'datasets')
 mf <- ts.multimodel.fit(AirPassengers)
 vals <- cbind(mf$data, mf$train.experts)
-colnames(vals) <- c("Data", colnames(mf$train.experts))
+colnames(vals) <- c('Data', colnames(mf$train.experts))
 
-autoplot(window(vals, start=c(1958,1)))
+autoplot(window(vals, start = c(1958,1)), na.rm=TRUE)
 }
 \seealso{
 \code{\link[forecast]{naive}} \code{\link[forecast]{meanf}}

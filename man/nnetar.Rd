@@ -28,29 +28,29 @@ allow unified interface.
 \examples{
 library(ggplot2)
 library(forecastR)
-data('AirPassengers', package='datasets')
+data('AirPassengers', package = 'datasets')
 ap.split <- ts.split(AirPassengers)
 out.sample.len <- length(ap.split$out.of.sample)
 
 #base fit
 fit <- nnetar(ap.split$in.sample)
 #log transformation
-fit2 <- nnetar(ap.split$in.sample, lambda=0)
+fit2 <- nnetar(ap.split$in.sample, lambda = 0)
 #log transformation w/ nnet decay parameter
-fit3 <- nnetar(ap.split$in.sample, lambda=0, decay=0.01)
+fit3 <- nnetar(ap.split$in.sample, lambda = 0, decay = 0.01)
 
-fcst <- forecast(fit, h=out.sample.len)
-fcst2 <- forecast(fit2, h=out.sample.len)
-fcst3 <- forecast(fit3, h=out.sample.len)
+fcst <- forecast(fit, h = out.sample.len)
+fcst2 <- forecast(fit2, h = out.sample.len)
+fcst3 <- forecast(fit3, h = out.sample.len)
 
 vals <- window(cbind(
- data=ap.split$data,
- base=fcst$mean,
- lambda=fcst2$mean,
- decay=fcst3$mean
- ), start=c(1957,1))
+ data = ap.split$data,
+ base = fcst$mean,
+ lambda = fcst2$mean,
+ decay = fcst3$mean
+ ), start = c(1957,1))
 
-autoplot(vals, na.rm=TRUE)
+autoplot(vals, na.rm = TRUE)
 }
 \seealso{
 \code{\link[forecast]{nnetar}} \code{\link[forecastR]{nnetar.w.decay}}

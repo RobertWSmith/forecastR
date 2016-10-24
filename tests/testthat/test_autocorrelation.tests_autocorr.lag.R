@@ -1,9 +1,6 @@
 context("Testing autocorr.lag `autocorrelation.tests.R`.")
-
 test_that("`autocorr.lag` function", {
-
-  data("AirPassengers", package="datasets")
-
+  data("AirPassengers", package = "datasets")
   freq <- frequency(AirPassengers)
   len <- length(AirPassengers)
   al <- autocorr.lags(AirPassengers)

@@ -4,10 +4,12 @@
 \alias{stlm}
 \title{STLM model fitting and updates}
 \usage{
-stlm(y, ...)
+stlm(y, model = NULL, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
+
+\item{model}{previously fit model object, currently not used}
 
 \item{...}{additional argument for model function}
 }
@@ -20,9 +22,9 @@ allow unified interface.
 }
 \examples{
 library(forecastR)
-data('AirPassengers', package='datasets')
+data('AirPassengers', package = 'datasets')
 fit <- stlm(AirPassengers)
-fit2 <- stlm(AirPassengers, lambda=0)
+fit2 <- stlm(AirPassengers, lambda = 0)
 }
 \seealso{
 \code{\link[forecast]{tbats}}

@@ -20,9 +20,9 @@ allow unified interface.
 }
 \examples{
 library(forecastR)
-data('AirPassengers', package='datasets')
+data('AirPassengers', package = 'datasets')
 fit <- arfima(AirPassengers)
-fit2 <- arfima(AirPassengers, lambda=0)
+fit2 <- arfima(AirPassengers, lambda = 0)
 }
 \seealso{
 \code{\link[forecast]{arfima}}

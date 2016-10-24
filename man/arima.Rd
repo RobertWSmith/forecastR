@@ -18,11 +18,13 @@ arima(y, d = NA, D = NA, stationary = TRUE, seasonal = (length(y) > 2.25
 \code{model} or \code{order} argument not passed as keyword arguments.}
 
 \item{seasonal}{logical. Defualt determined by checking length of time series `y`,
-if using monthly data (frequency=12), `y` must have more than 27 records to
+if using monthly data (frequency = 12), `y` must have more than 27 records to
 fit a seasonal model.}
 
 \item{model}{\code{tsm}, \code{\link[forecast]{Arima}} or
 \code{\link[stats]{arima}} object to be refit}
+
+\item{order}{integer vector. Non-seasonal ARIMA order}
 
 \item{...}{additional argument for model function. See
 \code{\link[forecast]{Arima}} and \code{\link[forecast]{auto.arima}}
@@ -37,10 +39,10 @@ Wrapper for forecast package functions \code{\link[forecast]{Arima}} and
 }
 \examples{
 library(forecastR)
-data('AirPassengers', package='datasets')
+data('AirPassengers', package = 'datasets')
 fit <- arima(AirPassengers)
-fit2 <- arima(AirPassengers, D=1)
-fit3 <- arima(AirPassengers, lambda=0)
+fit2 <- arima(AirPassengers, D = 1)
+fit3 <- arima(AirPassengers, lambda = 0)
 }
 \seealso{
 \code{\link[forecast]{Arima}} and \code{\link[forecast]{auto.arima}}

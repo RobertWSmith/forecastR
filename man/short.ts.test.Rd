@@ -21,7 +21,7 @@ simpler models.
 \examples{
 library(forecastR)
 data('AirPassengers', package='datasets')
-print("Default Freq. Multiple:", package_options("short.ts.frequency.multiple"))
+print('Default Freq. Multiple:', package_options('short.ts.frequency.multiple'))
 ## [1] 2.25
 short.ts.test(AirPassengers) #returns FALSE
 short.ts.test(AirPassengers, 15.0) #returns TRUE

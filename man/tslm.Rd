@@ -4,10 +4,12 @@
 \alias{tslm}
 \title{Time Series Linear Model}
 \usage{
-tslm(y, ...)
+tslm(y, model = NULL, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
+
+\item{model}{previously fit model}
 
 \item{...}{additional arguments to \code{\link[forecast]{tslm}}}
 }
@@ -20,9 +22,9 @@ allow unified interface.
 }
 \examples{
 library(forecastR)
-data('AirPassengers', package='datasets')
+data('AirPassengers', package = 'datasets')
 fit <- nnetar(AirPassengers)
-fit2 <- nnetar(AirPassengers, lambda=0)
+fit2 <- nnetar(AirPassengers, lambda = 0)
 }
 \seealso{
 \code{\link[forecast]{tslm}}

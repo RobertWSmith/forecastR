@@ -1,8 +1,7 @@
 context("Testing `forecast.R`.")
-
 test_that("`forecast` function", {
   library(forecast)
-  data("AirPassengers", package="datasets")
+  data("AirPassengers", package = "datasets")
   a <- forecastR::arima(AirPassengers)
   aa <- forecast::auto.arima(AirPassengers)
   fa <- forecastR::forecast(a)

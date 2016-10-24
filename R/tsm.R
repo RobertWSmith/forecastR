@@ -1,5 +1,4 @@
-
-
+## tsm.R
 #' Wrapper for Time Series Models that creates a unified interface.
 #'
 #' Internal function which applies \code{tsm} object formatting to time series
@@ -15,16 +14,10 @@
 #' @export
 tsm <- function(function.name, y, ...)
 {
-  output <- structure(
-    list(
-      function.name = function.name,
-      model = y
-        ),
-    class = "tsm"
-    )
+  output <- structure(list(function.name = function.name, model = y),
+    class = "tsm")
   return(output)
 }
-
 
 #' @param object value to be validated as `tsm` object
 #'
@@ -42,6 +35,7 @@ is.tsm <- function(object)
 {
   return(is(object, "tsm"))
 }
+
 
 #' Object Summary for \code{tsm} objects
 #'
@@ -106,15 +100,13 @@ coef.tsm <- function(object, ...)
 }
 
 
-
 #' Extract Model from \code{object}
 #'
 #' @param object an object which stores a model which requires direct access.
 #' @param ... other arguments
 #'
 #' @export
-model <- function(object, ...)
-  UseMethod("model")
+model <- function(object, ...) UseMethod("model")
 
 
 #' @describeIn model Default model extractor as pass-through
@@ -131,14 +123,15 @@ model.tsm <- function(object, ...)
   return(object$model)
 }
 
+
 #' Time Series Model Assignnment
 #'
 #' @param object object which is to store a time series model
 #' @param value time series model to be stored
 #'
 #' @export
-`model<-` <- function(object, value)
-  UseMethod("model<-")
+`model<-` <- function(object, value) UseMethod("model<-")
+
 
 #' @export
 #' @describeIn model<- \code{tsm} object model assignment
@@ -147,4 +140,3 @@ model.tsm <- function(object, ...)
   object$model <- value
   return(object)
 }
-

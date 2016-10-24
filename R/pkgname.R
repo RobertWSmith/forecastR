@@ -1,6 +1,5 @@
 ## pkgname.R
 
-
 #' forecastR
 #'
 #' This package relies heavily on \code{\link{forecast}} and \code{\link{opera}}
@@ -16,40 +15,35 @@ NULL
 
 
 ## Tidy dir settings.
-#
-# formatR::tidy_dir(path=".", recursive=TRUE, comment=TRUE, blank=FALSE,
-#                   arrow=TRUE, brace.newline=TRUE, indent=2, output=FALSE,
-#                   text=NULL, width.cutoff=60)
 
+
+# formatR::tidy_dir(path = '.', recursive = TRUE, comment =
+# TRUE, blank = TRUE, arrow = TRUE, brace.newline = TRUE,
+# indent = 2, output = FALSE, text = NULL, width.cutoff = 60)
 
 
 #' @importFrom settings options_manager inlist inrange
-PACKAGE_OPTIONS <- settings::options_manager(
-  autofit.models = sort(unique(c("arima", "arfima", "bats", "ets", "nnetar", "stlm", "tbats", "tslm"))),
+PACKAGE_OPTIONS <- settings::options_manager(autofit.models = sort(unique(c("arima",
+  "arfima", "bats", "ets", "nnetar", "stlm", "tbats", "tslm"))),
   autofit.models.short.ts = sort(unique(c("arima", "ets"))),
-  short.ts.frequency.multiple = 2.25,
-  ts.fields = list(
-    arima = c("residuals", "x"),
-    arfima = c("residuals", "x", "fitted"),
-    bats = c("errors", "y", "fitted.values"),
-    ets = c("residuals", "x", "fitted"),
-    nnetar = c("residuals", "x", "fitted"),
-    stlm = c("residuals", "x", "fitted"),
-    tbats = c("errors", "y", "fitted.values"),
-    tslm = c("residuals", "fitted.values")
-  )
-  # , .allowed = list(
-  #   autofit.models = settings::inlist("arima", "arfima", "bats", "ets",
-  #                                     "nnetar", "stlm", "tbats", "tslm"),
-  #   autofit.models.short.ts = settings::inlist("arima", "ets"),
-  #   short.ts.frequency.multiple = settings::inrange(min=1, max=Inf)
-  # )
-)
+  short.ts.frequency.multiple = 2.25, ts.fields = list(arima = c("residuals",
+    "x"), arfima = c("residuals", "x", "fitted"), bats = c("errors",
+    "y", "fitted.values"), ets = c("residuals", "x", "fitted"),
+    nnetar = c("residuals", "x", "fitted"), stlm = c("residuals",
+      "x", "fitted"), tbats = c("errors", "y", "fitted.values"),
+    tslm = c("residuals", "fitted.values")))
+
+# , .allowed = list( autofit.models =
+# settings::inlist('arima', 'arfima', 'bats', 'ets',
+# 'nnetar', 'stlm', 'tbats', 'tslm'), autofit.models.short.ts
+# = settings::inlist('arima', 'ets'),
+# short.ts.frequency.multiple = settings::inrange(min = 1,
+# max = Inf) )
 
 
 #' Set or get options for \code{forecastR} package
 #'
-#' @param ... Option names to retrieve option values or \code{[key]=[value]} pairs to set options.
+#' @param ... Option names to retrieve option values or \code{[key] = [value]} pairs to set options.
 #'
 #' @section Supported options:
 #' The following options are supported
@@ -71,7 +65,8 @@ PACKAGE_OPTIONS <- settings::options_manager(
 #' @importFrom settings stop_if_reserved options_manager inlist
 #'
 #' @export
-package_options <- function(...){
+package_options <- function(...)
+{
   # protect against the use of reserved words.
   settings::stop_if_reserved(...)
   return(PACKAGE_OPTIONS(...))

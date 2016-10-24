@@ -35,25 +35,26 @@ Update Multimodel fit
 \examples{
 library(ggplot2)
 library(forecastR)
-data('AirPassengers', package='datasets')
+data('AirPassengers', package = 'datasets')
 
 ap.split <- ts.split(AirPassengers)
 
-mf <- ts.model.fit(ap.split$in.sample, ts.model.type='arima')
+mf <- ts.model.fit(ap.split$in.sample, ts.model.type = 'arima')
 mf.fcst <- forecast(mf, length(ap.split$out.of.sample))
 summary(mf)
 
-vals <- cbind(Data=ap.split$data, Forecast.Mean=mf.fcst$mean)
-autoplot(window(vals, start=c(1958,1)))
+vals <- cbind(Data = ap.split$data, Forecast.Mean = mf.fcst$mean)
+autoplot(window(vals, start = c(1958,1)), na.rm=TRUE)
 
 mf2 <- ts.model.refit(ap.split$data, mf)
 mf2.fcst <- forecast(mf2, 24)
 summary(mf2)
 
-vals <- cbind(Data=ap.split$data, In.Sample.Fcst=mf.fcst$mean, Out.Of.Sample.Fcst=mf2.fcst$mean)
-autoplot(window(vals, start=c(1958,1)))
+vals <- cbind(Data = ap.split$data, In.Sample.Fcst = mf.fcst$mean,
+              Out.Of.Sample.Fcst = mf2.fcst$mean)
+autoplot(window(vals, start = c(1958,1)), na.rm=TRUE)
 
-coef(mf) == coef(mf2)
+coef(mf) ==  coef(mf2)
 }
 \seealso{
 \code{\link[forecastR]{ts.multimodel.fit}}

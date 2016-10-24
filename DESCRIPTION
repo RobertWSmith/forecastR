@@ -26,7 +26,7 @@ Suggests:
 LinkingTo: Rcpp
 RoxygenNote: 5.0.1
 Collate:
-    'autocorrelation.tests.R'
+    'autocorrelation_tests.R'
     'models.R'
     'autofit.R'
     'forecast.R'

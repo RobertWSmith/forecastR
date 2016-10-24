@@ -23,19 +23,19 @@ Generic Time Series Model Fit for Package Models
 \examples{
 library(ggplot2)
 library(forecastR)
-data('AirPassengers', package='datasets')
+data('AirPassengers', package = 'datasets')
 
 ap.split <- ts.split(AirPassengers)
 
-mf <- ts.model.fit(ap.split$in.sample, ts.model.type='arima')
+mf <- ts.model.fit(ap.split$in.sample, ts.model.type = 'arima')
 mf.fcst <- forecast(mf, length(ap.split$out.of.sample))
 summary(mf)
 coef(mf)
 
 autoplot(resid(mf))
 
-vals <- cbind(Data=ap.split$data, Forecast.Mean=mf.fcst$mean)
-autoplot(window(vals, start=c(1958,1)))
+vals <- cbind(Data = ap.split$data, Forecast.Mean = mf.fcst$mean)
+autoplot(window(vals, start = c(1958,1)), na.rm=TRUE)
 }
 \seealso{
 \code{\link[forecastR]{arima}} \code{\link[forecastR]{arfima}}

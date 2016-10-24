@@ -1,5 +1,6 @@
 ## forecast.R
 
+
 #' Forecast \code{tsm} object model
 #'
 #' Wrapper for forecast package functions \code{\link[forecast]{forecast}} to
@@ -24,6 +25,7 @@
 #' fit <- arima(AirPassengers)
 #' fcst <- forecast(fit)
 #' autoplot(fcst)
-forecast <- function(object, ...) {
+forecast <- function(object, ...)
+{
   return(forecast::forecast(model(object), ...))
 }

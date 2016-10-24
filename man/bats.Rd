@@ -20,9 +20,9 @@ allow unified interface.
 }
 \examples{
 library(forecastR)
-data('AirPassengers', package='datasets')
+data('AirPassengers', package = 'datasets')
 fit <- bats(AirPassengers)
-fit2 <- bats(AirPassengers, lambda=0)
+fit2 <- bats(AirPassengers, lambda = 0)
 }
 \seealso{
 \code{\link[forecast]{bats}}
