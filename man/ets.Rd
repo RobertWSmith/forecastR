@@ -4,10 +4,16 @@
 \alias{ets}
 \title{ETS model fitting and updates}
 \usage{
-ets(y, ...)
+ets(y, model = "ZZZ", allow.multiplicative.trend = TRUE, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
+
+\item{model}{either a string identifying model method, or previously fitted
+model object. See \code{\link[forecast]{ets}} for more information}
+
+\item{allow.multiplicative.trend}{logical. should the model consider
+multiplicative exponential smoothing models?}
 
 \item{...}{additional argument for model function}
 }

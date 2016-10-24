@@ -33,7 +33,7 @@ tsm <- function(function.name, y, ...)
 #' @export
 is.tsm <- function(object)
 {
-  return(is(object, "tsm"))
+  return(inherits(object, "tsm"))
 }
 
 

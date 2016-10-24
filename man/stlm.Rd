@@ -4,20 +4,12 @@
 \alias{stlm}
 \title{STLM model fitting and updates}
 \usage{
-<<<<<<< HEAD
-stlm(y, model = NULL, ...)
-=======
 stlm(y, model = "ZZN", ...)
->>>>>>> origin/master
 }
 \arguments{
 \item{y}{Univariate Time Series}
 
-<<<<<<< HEAD
 \item{model}{previously fit model object, currently not used}
-=======
-\item{model}{previously fit model}
->>>>>>> origin/master
 
 \item{...}{additional argument for model function}
 }

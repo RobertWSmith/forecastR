@@ -4,10 +4,14 @@
 \alias{tbats}
 \title{TBATS model fitting and updates}
 \usage{
-tbats(y, ...)
+tbats(y, lambda = NULL, model = NULL, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
+
+\item{lambda}{not used, in place to ensure uniform API}
+
+\item{model}{previously fit model}
 
 \item{...}{additional argument for model function}
 }

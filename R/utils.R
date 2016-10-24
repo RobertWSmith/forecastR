@@ -21,8 +21,8 @@
 #' @examples
 #' library(forecastR)
 #' x <- ts(1:100, freq=12)
-#' frac <- 0.2
-#' x.split <- ts.split(x, split.frac = frac)
+#' frac <- 0.20
+#' x.split <- ts.split(x, split = frac)
 #'
 #' x.data <- x.split$data
 #' x.in.sample <- x.split$in.sample
@@ -30,28 +30,49 @@
 #'
 #' length(na.omit(x.out.of.sample)) == (length(x.data) * frac)
 #' x.data == c(na.omit(x.in.sample), na.omit(x.out.of.sample))
-ts.split <- function(x, split = 0.2, as.list = TRUE, short.ts.multiple = package_options("short.ts.frequency.multiple"),
-  ...)
+#'
+#' data("AirPassengers", package="datasets")
+#' split <- 24L
+#' ap.split <- ts.split(AirPassengers, split = split)
+#' length(ap.split$data) == length(AirPassengers)
+#' length(ap.split$out.of.sample) == split
+#' length(ap.split$in.sample) == (length(AirPassengers) - split)
+ts.split <- function(x, split = 0.2, as.list = TRUE, short.ts.multiple = NULL, ...)
   {
+  if (is.null(short.ts.multiple))
+  {
+    short.ts.multiple <- package_options("short.ts.frequency.multiple")
+  }
   is.short <- (length(x) < (frequency(x) * short.ts.multiple))
-  record.count <- dim(x)
-  if (length(record.count) > 1)
-    record.count <- record.count[1] else if (is.null(record.count))
+
+  if (is.null(record.count <- dim(x)[1]))
+  {
     record.count <- length(x)
+  }
+
   if (split < 0)
+  {
     stop("`split` must be >= 0.0")
-  split.records <- as.numeric(1L)
+  }
+
+  split.records <- as.integer(1L)
   if (split < 1)
-    split.records <- as.numeric(round(record.count * split,
-      digits = 0)) else if (split > 1)
-    split.records <- as.numeric(round(split.records, digits = 0))
+  {
+    split.records <- as.integer(round(record.count * split, digits = 0))
+  } else if (split > 1)
+  {
+    split.records <- as.integer(round(split, digits = 0))
+  }
+
   # default is to provide records for each
   out.of.sample <- in.sample <- data <- x
   if (!is.short)
   {
-    in.sample <- window(x, end = tsp(x)[2] - (split.records/frequency(x)))
-    out.of.sample <- window(x, start = tsp(x)[2] - ((split.records -
-      1)/frequency(x)))
+    in.sample.end <- tsp(x)[2] - (split.records * deltat(x))
+    out.sample.start <- in.sample.end + deltat(x)
+
+    in.sample <- window(x, end = in.sample.end)
+    out.of.sample <- window(x, start = out.sample.start)
   }
   if (!as.list)
   {
@@ -79,7 +100,7 @@ ts.split <- function(x, split = 0.2, as.list = TRUE, short.ts.multiple = package
 #' x <- ts(1:100, freq=12)
 #' sample.frac <- 0.2
 #' !is.ts.split(x)
-#' x.split <- ts.split(x, split.frac = sample.frac)
+#' x.split <- ts.split(x, split = sample.frac)
 #' is.ts.split(x.split)
 is.ts.split <- function(x)
 {
@@ -110,7 +131,7 @@ as.data.frame.ts.split <- function(x, ...)
   {
     x.tmp <- do.call(cbind, x)
     x.names <- names(x)
-  } else if (inherits(x, "mts"))
+  } else if (inherits(x, "matrix"))
   {
     x.tmp <- x
     x.names <- colnames(x)
@@ -206,8 +227,7 @@ short.ts <- function(y, freq.multiple = package_options("short.ts.frequency.mult
 #' @importFrom stats ts tsp
 short.ts.inv <- function(y.short.ts, x.ts = NULL, ...)
 {
-  if (!is.null(x.ts) && !is.ts(x.ts))
-    stop("`x.ts` must be `ts` object.")
+  x.ts <- as.ts(x.ts)
   ts.tsp <- y.short.ts$orig.tsp
   if (!is.list(y.short.ts))
     ts.tsp <- tsp(y.short.ts)
@@ -217,3 +237,7 @@ short.ts.inv <- function(y.short.ts, x.ts = NULL, ...)
   ts.freq <- ts.tsp[3]
   return(ts(as.numeric(x.ts), start = ts.start, frequency = ts.freq))
 }
+
+
+
+

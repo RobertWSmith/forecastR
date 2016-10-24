@@ -4,10 +4,14 @@
 \alias{bats}
 \title{BATS model fitting and updates}
 \usage{
-bats(y, ...)
+bats(y, model = NULL, lambda = NULL, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
+
+\item{model}{previously fitted model object.}
+
+\item{lambda}{not used, in place to ensure uniform API}
 
 \item{...}{additional argument for model function}
 }
