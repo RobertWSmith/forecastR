@@ -24,6 +24,8 @@ fit a seasonal model.}
 \item{model}{\code{tsm}, \code{\link[forecast]{Arima}} or
 \code{\link[stats]{arima}} object to be refit}
 
+\item{order}{numeric vector. non-seasonal order of the time series.}
+
 \item{...}{additional argument for model function. See
 \code{\link[forecast]{Arima}} and \code{\link[forecast]{auto.arima}}
 for allowable named arguments and definitions}
