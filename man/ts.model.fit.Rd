@@ -10,8 +10,8 @@ ts.model.fit(y, ts.model.type = c("arfima", "arima", "bats", "ets", "nnetar",
   "stlm", "tbats", "tslm"), ...)
 
 ts.model.autofit(y, ts.model.type = c("arfima", "arima", "bats", "ets",
-  "nnetar", "stlm", "tbats", "tslm"), lambda = c(0, forecast::BoxCox.lambda(y,
-  "loglik")), alpha = 0.05, return.all.models = TRUE, ...)
+  "nnetar", "stlm", "tbats", "tslm"), lambda = 0, alpha = 0.05,
+  return.all.models = TRUE, ...)
 
 ts.model.refit(y, model, ...)
 }

@@ -4,8 +4,9 @@
 \alias{ts.multimodel.fit}
 \title{Multi- Time Series Model Fit}
 \usage{
-ts.multimodel.fit(y, split = 0.2, ts.model.types = c("arfima", "arima",
-  "bats", "ets", "nnetar", "stlm", "tbats", "tslm"),
+ts.multimodel.fit(y, split = 0.2, boot.reps = NULL,
+  ts.model.types = c("arfima", "arima", "bats", "ets", "nnetar", "stlm",
+  "tbats", "tslm"),
   freq.multiple = package_options("short.ts.frequency.multiple"), ...)
 }
 \arguments{
@@ -13,6 +14,10 @@ ts.multimodel.fit(y, split = 0.2, ts.model.types = c("arfima", "arima",
 
 \item{split}{numeric. Determines in/out-sample proportions. If NULL, no split
 is applied.}
+
+\item{boot.reps}{integer. Optional parameter, if provided model is fit against
+the mean of `boot.reps` number of bootstrap replicates. Can help smooth
+excess volatility}
 
 \item{ts.model.types}{character vector. name of function returing \code{tsm}
 model object}
@@ -42,6 +47,6 @@ for (nm in names(mf))
 }
 \seealso{
 \code{\link[forecast]{naive}} \code{\link[forecast]{meanf}}
-  \code{\link[forecast]{thetaf}}
+  \code{\link[forecast]{thetaf}} \code{\link[meboot]{meboot}}
 }
 

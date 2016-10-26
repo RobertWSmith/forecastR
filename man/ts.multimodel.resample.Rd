@@ -4,7 +4,7 @@
 \alias{ts.multimodel.resample}
 \title{Update Multimodel Fit}
 \usage{
-ts.multimodel.resample(y, tsm.multi, boot.reps = 100, split = 0.2,
+ts.multimodel.resample(y, tsm.multi, boot.reps = 25, split = 0.2,
   oos.h = 18L, alpha = 0.05, ...)
 }
 \arguments{

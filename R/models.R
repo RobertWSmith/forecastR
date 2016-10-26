@@ -41,11 +41,17 @@
 arima <- function(y, lambda = NULL, model = NULL, order = NULL, ...)
   {
   model.name <- "arima"
-  y.ts <- short.ts(y, freq.multiple = 2.25)
+
+  if (!is.null(model))
+    lambda <- model(model)$lambda
+
+  y.ts <- short.ts(y, freq.multiple = 2.25, lambda = lambda)
   y <- y.ts$y
+
 
   if (!is.null(model))
   {
+    lambda <- model(model)$lambda
     fit <- forecast::Arima(y, model = model(model), lambda = lambda, ...)
   } else if (!is.null(order))
   {
@@ -57,7 +63,7 @@ arima <- function(y, lambda = NULL, model = NULL, order = NULL, ...)
 
   for (nm in package_options("ts.fields")[[model.name]])
   {
-    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]), nm)
   }
 
   output <- tsm(model.name, fit)
@@ -72,6 +78,8 @@ arima <- function(y, lambda = NULL, model = NULL, order = NULL, ...)
 #'
 #' @param y Univariate Time Series
 #' @param model \code{tsm} object, used to refit model
+#' @param lambda optional, if null ignored otherwise treated as the Box-Cox
+#'   parameter
 #' @param ... additional argument for model function
 #'
 #' @return \code{tsm} object
@@ -90,10 +98,10 @@ arima <- function(y, lambda = NULL, model = NULL, order = NULL, ...)
 #' data('AirPassengers', package = 'datasets')
 #' fit <- arfima(AirPassengers)
 #' fit2 <- arfima(AirPassengers, lambda = 0)
-arfima <- function(y, model = NULL, ...)
+arfima <- function(y, model = NULL, lambda = NULL, ...)
 {
   model.name <- "arfima"
-  y.ts <- short.ts(y, freq.multiple = 2.25)
+  y.ts <- short.ts(y, freq.multiple = 2.25, lambda = lambda)
   y <- y.ts$y
 
   if (!is.null(model))
@@ -104,7 +112,7 @@ arfima <- function(y, model = NULL, ...)
   fit <- forecast::arfima(y, ...)
   for (nm in package_options("ts.fields")[[model.name]])
   {
-    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]), nm)
   }
   output <- tsm(model.name, fit)
   return(output)
@@ -140,12 +148,12 @@ arfima <- function(y, model = NULL, ...)
 bats <- function(y, model = NULL, lambda = NULL, ...)
 {
   model.name <- "bats"
-  y.ts <- short.ts(y, freq.multiple = 2.25)
+  y.ts <- short.ts(y, freq.multiple = 2.25, NULL)
   y <- y.ts$y
   fit <- forecast::bats(y, model = model(model), ...)
   for (nm in package_options("ts.fields")[[model.name]])
   {
-    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]), nm)
   }
   output <- tsm(model.name, fit)
   return(output)
@@ -162,6 +170,8 @@ bats <- function(y, model = NULL, lambda = NULL, ...)
 #'   model object. See \code{\link[forecast]{ets}} for more information
 #' @param allow.multiplicative.trend logical. should the model consider
 #'   multiplicative exponential smoothing models?
+#' @param lambda optional, if null ignored otherwise treated as the Box-Cox
+#'   parameter
 #' @param ... additional argument for model function
 #'
 #' @return \code{tsm} object
@@ -180,16 +190,17 @@ bats <- function(y, model = NULL, lambda = NULL, ...)
 #' data('AirPassengers', package = 'datasets')
 #' fit <- ets(AirPassengers)
 #' fit2 <- ets(AirPassengers, lambda = 0)
-ets <- function(y, model = "ZZZ", allow.multiplicative.trend = TRUE, ...)
+ets <- function(y, model = "ZZZ", allow.multiplicative.trend = TRUE, lambda = NULL, ...)
 {
   model.name <- "ets"
-  y.ts <- short.ts(y, freq.multiple = 2.25)
+  y.ts <- short.ts(y, freq.multiple = 2.25, lambda = lambda)
   y <- y.ts$y
   fit <- forecast::ets(y, model = model(model),
-                       allow.multiplicative.trend = allow.multiplicative.trend, ...)
+                       allow.multiplicative.trend = allow.multiplicative.trend,
+                       lambda = lambda, ...)
   for (nm in package_options("ts.fields")[[model.name]])
   {
-    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]), nm)
   }
   output <- tsm(model.name, fit)
   return(output)
@@ -203,6 +214,8 @@ ets <- function(y, model = "ZZZ", allow.multiplicative.trend = TRUE, ...)
 #'
 #' @param y Univariate Time Series
 #' @param model previously fit model object
+#' @param lambda optional, if null ignored otherwise treated as the Box-Cox
+#'   parameter
 #' @param ... additional argument for model function
 #'
 #' @return \code{tsm} object
@@ -240,16 +253,27 @@ ets <- function(y, model = "ZZZ", allow.multiplicative.trend = TRUE, ...)
 #'  ), start = c(1957,1))
 #'
 #' autoplot(vals, na.rm = TRUE)
-nnetar <- function(y, model = NULL, ...)
+nnetar <- function(y, model = NULL, lambda = NULL, ...)
 {
   model.name <- "nnetar"
-  y.ts <- short.ts(y, freq.multiple = 2.25)
-  y <- y.ts$y
-  fit <- forecast::nnetar(y, model = model(model), ...)
-  for (nm in package_options("ts.fields")[[model.name]])
+
+  # when refitting, don't modify the attributes of y
+  if (is.null(model))
   {
-    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+    y.ts <- short.ts(y, freq.multiple = 2.25, lambda = lambda)
+    y <- y.ts$y
   }
+  fit <- forecast::nnetar(y, model = model(model), lambda = lambda, ...)
+
+  # when refitting, don't modify the attributes of y
+  if (is.null(model))
+  {
+    for (nm in package_options("ts.fields")[[model.name]])
+    {
+      fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]), nm)
+    }
+  }
+
   output <- tsm(model.name, fit)
   return(output)
 }
@@ -262,6 +286,8 @@ nnetar <- function(y, model = NULL, ...)
 #'
 #' @param y Univariate Time Series
 #' @param model previously fit model object, currently not used
+#' @param lambda optional, if null ignored otherwise treated as the Box-Cox
+#'   parameter
 #' @param ... additional argument for model function
 #'
 #' @return \code{tsm} object
@@ -278,15 +304,15 @@ nnetar <- function(y, model = NULL, ...)
 #' data('AirPassengers', package = 'datasets')
 #' fit <- stlm(AirPassengers)
 #' fit2 <- stlm(AirPassengers, lambda = 0)
-stlm <- function(y, model = "ZZN", ...)
+stlm <- function(y, model = "ZZN", lambda = NULL, ...)
 {
   model.name <- "stlm"
-  y.ts <- short.ts(y, freq.multiple = 2.25)
+  y.ts <- short.ts(y, freq.multiple = 2.25, lambda = lambda)
   y <- y.ts$y
-  fit <- forecast::stlm(y, ...)
+  fit <- forecast::stlm(y, lambda = lambda, ...)
   for (nm in package_options("ts.fields")[[model.name]])
   {
-    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]), nm)
   }
   output <- tsm(model.name, fit)
   return(output)
@@ -301,6 +327,8 @@ stlm <- function(y, model = "ZZN", ...)
 #' @param y Univariate Time Series
 #' @param lambda not used, in place to ensure uniform API
 #' @param model previously fit model
+#' @param lambda optional, if null ignored otherwise treated as the Box-Cox
+#'   parameter
 #' @param ... additional argument for model function
 #'
 #' @return \code{tsm} object
@@ -321,12 +349,12 @@ tbats <- function(y, lambda = NULL, model = NULL, ...)
 {
   model.name <- "tbats"
   y.orig <- y
-  y.ts <- short.ts(y, freq.multiple = 2.25)
+  y.ts <- short.ts(y, freq.multiple = 2.25, lambda = lambda)
   y <- y.ts$y
   fit <- forecast::tbats(y, model = model(model), ...)
   for (nm in package_options("ts.fields")[[model.name]])
   {
-    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]), nm)
   }
   output <- tsm(model.name, fit)
   return(output)
@@ -340,6 +368,8 @@ tbats <- function(y, lambda = NULL, model = NULL, ...)
 #'
 #' @param y Univariate Time Series
 #' @param model previously fit model
+#' @param lambda optional, if null ignored otherwise treated as the Box-Cox
+#'   parameter
 #' @param ... additional arguments to \code{\link[forecast]{tslm}}
 #'
 #' @return \code{tsm} object
@@ -356,12 +386,12 @@ tbats <- function(y, lambda = NULL, model = NULL, ...)
 #' data('AirPassengers', package = 'datasets')
 #' fit <- nnetar(AirPassengers)
 #' fit2 <- nnetar(AirPassengers, lambda = 0)
-tslm <- function(y, model = NULL, ...)
+tslm <- function(y, model = NULL, lambda = NULL, ...)
 {
   model.name <- "tslm"
 
   y.orig <- y
-  y.ts <- short.ts(y, freq.multiple = 2.25)
+  y.ts <- short.ts(y, freq.multiple = 2.25, lambda = lambda)
   y <- y.ts$y
 
   if (y.ts$was.transformed)
@@ -372,11 +402,12 @@ tslm <- function(y, model = NULL, ...)
     fmla.txt <- "y ~ trend + season"
   }
 
-  fit <- forecast::tslm(as.formula(fmla.txt), ...)
+  fit <- forecast::tslm(as.formula(fmla.txt), lambda = lambda, ...)
   for (nm in package_options("ts.fields")[[model.name]])
   {
-    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]))
+    fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]), nm)
   }
   output <- tsm(model.name, fit)
   return(output)
 }
+

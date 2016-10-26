@@ -14,6 +14,9 @@ tbats(y, lambda = NULL, model = NULL, ...)
 \item{model}{previously fit model}
 
 \item{...}{additional argument for model function}
+
+\item{lambda}{optional, if null ignored otherwise treated as the Box-Cox
+parameter}
 }
 \value{
 \code{tsm} object

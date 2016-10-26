@@ -4,12 +4,15 @@
 \alias{tslm}
 \title{Time Series Linear Model}
 \usage{
-tslm(y, model = NULL, ...)
+tslm(y, model = NULL, lambda = NULL, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
 
 \item{model}{previously fit model}
+
+\item{lambda}{optional, if null ignored otherwise treated as the Box-Cox
+parameter}
 
 \item{...}{additional arguments to \code{\link[forecast]{tslm}}}
 }
