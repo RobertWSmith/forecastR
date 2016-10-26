@@ -212,20 +212,25 @@ short.ts.test <- function(y, freq.multiple = package_options("short.ts.frequency
 ### return(x) }) template for short time series
 # internal function to parse short time series
 #' @importFrom stats ts start tsp frequency
-short.ts <- function(y, freq.multiple = package_options("short.ts.frequency.multiple"))
+short.ts <- function(y, lambda = NULL,
+                     freq.multiple = package_options("short.ts.frequency.multiple"))
 {
   orig.y <- y
   orig.freq <- as.numeric(frequency(y))
   needs.transformed <- short.ts.test(y, freq.multiple)
   if (needs.transformed)
     y <- ts(as.numeric(y))
+  log.lambda <- (!is.null(lambda) && (as.integer(round(lambda,0)) == 0L))
+  if (log.lambda)
+    y <- y + 1
   return(list(y = y, freq.multiple = freq.multiple, orig.freq = orig.freq,
-    orig.start = start(orig.y), orig.tsp = tsp(orig.y), was.transformed = needs.transformed))
+    orig.start = start(orig.y), orig.tsp = tsp(orig.y), log.lambda = log.lambda,
+    was.transformed = needs.transformed))
 }
 
 
 #' @importFrom stats ts tsp
-short.ts.inv <- function(y.short.ts, x.ts = NULL, ...)
+short.ts.inv <- function(y.short.ts, x.ts = NULL, nm = "", ...)
 {
   x.ts <- as.ts(x.ts)
   ts.tsp <- y.short.ts$orig.tsp

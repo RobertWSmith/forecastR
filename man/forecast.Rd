@@ -4,10 +4,12 @@
 \alias{forecast}
 \title{Forecast \code{tsm} object model}
 \usage{
-forecast(object, ...)
+forecast(object, h = 18L, ...)
 }
 \arguments{
 \item{object}{\code{\link[forecastR]{tsm}} fitted model object.}
+
+\item{h}{integer. number of out of sample forecast periods}
 
 \item{...}{additional argument for model function}
 }

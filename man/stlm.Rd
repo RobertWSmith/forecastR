@@ -4,12 +4,15 @@
 \alias{stlm}
 \title{STLM model fitting and updates}
 \usage{
-stlm(y, model = "ZZN", ...)
+stlm(y, model = "ZZN", lambda = NULL, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
 
 \item{model}{previously fit model object, currently not used}
+
+\item{lambda}{optional, if null ignored otherwise treated as the Box-Cox
+parameter}
 
 \item{...}{additional argument for model function}
 }

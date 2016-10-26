@@ -100,17 +100,29 @@ ts.model.fit <- function(y, ts.model.type = c("arfima", "arima", "bats", "ets",
 ts.model.autofit <- function(y, ts.model.type = c("arfima", "arima", "bats",
                                                   "ets", "nnetar", "stlm",
                                                   "tbats", "tslm"),
-                             lambda = c(0, forecast::BoxCox.lambda(y, "loglik")),
+                             lambda = 0,
                              alpha = 0.05, return.all.models = TRUE, ...)
 {
   ts.model.type <- match.arg(ts.model.type)
+  lambda <- as.numeric(lambda)
+  temp.lambda <- try({forecast::BoxCox.lambda(y, "loglik")}, silent = TRUE)
+  if (!inherits(temp.lambda, "try-error"))
+  {
+    lambda <- c(lambda, temp.lambda)
+  }
 
   outputs <- list()
   if (!(ts.model.type %in% c("bats", "tbats")))
   {
     lambda <- as.numeric(lambda)
     if (length(y) > 2.25 * frequency(y))
-      lambda <- c(lambda, forecast::BoxCox.lambda(y))
+    {
+      temp.lambda <- try({forecast::BoxCox.lambda(y, "loglik")}, silent = TRUE)
+      if (!inherits(temp.lambda, "try-error"))
+      {
+        lambda <- c(lambda, temp.lambda)
+      }
+    }
     lambda <- sort(unique(lambda))
 
     best.lambda <- NULL
@@ -120,8 +132,10 @@ ts.model.autofit <- function(y, ts.model.type = c("arfima", "arima", "bats",
 
     for (lmb in lambda)
     {
-      fit <- ts.model.fit(y, ts.model.type = ts.model.type, lambda = lmb) #, ...)
+      fit <- ts.model.fit(y, ts.model.type = ts.model.type, lambda = lmb, ...)
       outputs[[length(outputs)+1]] <- fit
+      aic.len <- try({length(AIC(model(fit)))}, silent = TRUE)
+      aic.len <- ifelse(inherits(aic.len, "try-error"), 0, aic.len)
 
       if ((ts.model.type %in% c("nnetar", "stlm")))
       {
@@ -130,11 +144,16 @@ ts.model.autofit <- function(y, ts.model.type = c("arfima", "arima", "bats",
           best.fit <- fit
           best.lambda <- lmb
         }
-      } else if (AIC(model(fit)) < AIC(model(best.fit)))
+      } else if (aic.len > 0 && AIC(model(fit)) < AIC(model(best.fit)))
       {
           best.fit <- fit
           best.lambda <- lmb
+      } else if (sum(residuals(fit)^2) < sum(residuals(best.fit)^2))
+      {
+        best.fit <- fit
+        best.lambda <- lmb
       }
+
     }
   } else
   {
@@ -190,14 +209,25 @@ ts.model.autofit <- function(y, ts.model.type = c("arfima", "arima", "bats",
 #' coef(mf) ==  coef(mf2)
 ts.model.refit <- function(y, model, ...)
 {
+  y.orig <- y
   kw <- list(...)
-  kw$y <- quote(y)
-  mdl <- model
-  if (model$function.name %in% c("bats", "stlm"))
+
+
+  mdl <- model(model)
+  log.lambda <- ("lambda" %in% names(mdl)) && is.numeric(mdl$lambda) && as.integer(round(mdl$lambda)) == 0L
+  if (log.lambda)
   {
-    mdl <- quote(model)
+    y[y<0] <- 0.0
+    y <- y + 1
+    tsp(y) <- tsp(y.orig)
   }
+
+  kw$y <- quote(y)
+
   kw$model <- mdl
+  if (!is.character(mdl))
+    kw$model <- quote(mdl)
+
   return(do.call(model$function.name, kw))
 }
 

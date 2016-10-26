@@ -4,12 +4,15 @@
 \alias{nnetar}
 \title{NNETAR model fitting and updates}
 \usage{
-nnetar(y, model = NULL, ...)
+nnetar(y, model = NULL, lambda = NULL, ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
 
 \item{model}{previously fit model object}
+
+\item{lambda}{optional, if null ignored otherwise treated as the Box-Cox
+parameter}
 
 \item{...}{additional argument for model function}
 }

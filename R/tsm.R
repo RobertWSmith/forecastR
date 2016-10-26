@@ -14,7 +14,7 @@
 #' @export
 tsm <- function(function.name, y, ...)
 {
-  output <- structure(list(function.name = function.name, model = y),
+  output <- structure(list(function.name = function.name, model = y, ...),
     class = "tsm")
   return(output)
 }

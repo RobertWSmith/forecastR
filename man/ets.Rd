@@ -4,7 +4,8 @@
 \alias{ets}
 \title{ETS model fitting and updates}
 \usage{
-ets(y, model = "ZZZ", allow.multiplicative.trend = TRUE, ...)
+ets(y, model = "ZZZ", allow.multiplicative.trend = TRUE, lambda = NULL,
+  ...)
 }
 \arguments{
 \item{y}{Univariate Time Series}
@@ -14,6 +15,9 @@ model object. See \code{\link[forecast]{ets}} for more information}
 
 \item{allow.multiplicative.trend}{logical. should the model consider
 multiplicative exponential smoothing models?}
+
+\item{lambda}{optional, if null ignored otherwise treated as the Box-Cox
+parameter}
 
 \item{...}{additional argument for model function}
 }

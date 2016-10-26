@@ -4,8 +4,9 @@
 \alias{ts.mixture}
 \title{Mixture Model fit}
 \usage{
-ts.mixture(y, tsm.multi, split = 0.2, oos.h = 18L, alpha = 0.05,
-  boot.reps = 25, ...)
+ts.mixture(y, tsm.multi = NULL, split = 0.2, oos.h = 18L, alpha = 0.05,
+  boot.reps = 25, min.records = as.integer(min(12L, frequency(y)) + 1L),
+  ...)
 }
 \arguments{
 \item{y}{\code{\link[stats]{ts}} object. univariate time series}
@@ -21,6 +22,10 @@ output.}
 
 \item{boot.reps}{integer. number of bootstrap replicates to fit against}
 
+\item{min.records}{integer. number of records identifying a minimum sample for
+splitting the time series into subsets for in-sample cross validation of the
+model fits}
+
 \item{...}{extra arguments for `ts.model.type`}
 }
 \description{
@@ -33,6 +38,7 @@ data("AirPassengers", package="datasets")
 
 ap <- window(AirPassengers, end=c(1959,12))
 ap.oos <- window(AirPassengers, start=c(1960,1))
+autoplot(cbind(ap, ap.oos))
 
 split.fctr <- 24
 tsm <- ts.multimodel.fit(ap, split=split.fctr)
@@ -47,8 +53,11 @@ fcst <- cbind(mx$mixture.model$response, mx$out.of.sample.experts)
 fcst.err <- fcst - ap.oos
 colnames(fcst.err) <- c("Mixture Model", colnames(mx$out.of.sample.experts))
 autoplot(abs(fcst.err))
+
 cum.fcst.err <- ts(do.call(cbind, lapply(abs(fcst.err), cumsum)))
 tsp(cum.fcst.err) <- tsp(fcst.err)
 autoplot(cum.fcst.err)
+cum.fcst.err.smry <- as.numeric(cum.fcst.err[nrow(cum.fcst.err), ])
+print(sort(cum.fcst.err.smry))
 }
 
