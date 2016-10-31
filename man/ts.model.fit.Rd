@@ -56,6 +56,7 @@ Autofit Time Series models attempting multiple standardized transformations
 \item \code{ts.model.autofit}: Autofit Time Series Model
 }}
 \examples{
+library(ggplot2)
 library(forecastR)
 data('AirPassengers', package = 'datasets')
 
@@ -70,7 +71,7 @@ autoplot(resid(mf))
 
 vals <- window(cbind(Data = ap.split$data, Forecast.Mean = mf.fcst$mean),
     start = c(1958,1))
-suppressWarnings(plot(vals, plot.type="single", col=1:2))
+autoplot(vals)
 library(forecastR)
 data('AirPassengers', package = 'datasets')
 
@@ -115,17 +116,17 @@ errs <- vals - ap.split$out.of.sample
 
 vals <- cbind(vals, ap.split$data)
 colnames(vals) <- c(1:length(mf.fcst), "Data")
-autoplot(window(vals, start = c(1958,1)), na.rm=TRUE)
+suppressWarnings(autoplot(window(vals, start = c(1958,1))))
 
 colnames(errs) <- 1:4
-autoplot(errs)
+suppressWarnings(autoplot(errs))
 
 abs.errs <- abs(errs)
-autoplot(abs.errs)
+suppressWarnings(autoplot(abs.errs))
 
 cum.errs <- as.ts(apply(errs, 2, cumsum))
 tsp(cum.errs) <- tsp(cum.errs)
-autoplot(cum.errs)
+suppressWarnings(autoplot(cum.errs))
 }
 \seealso{
 \code{\link[forecastR]{arima}} \code{\link[forecastR]{arfima}}

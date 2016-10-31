@@ -9,6 +9,12 @@ optimize.lambda(y, lower = -1, upper = 2, tol = 0.001, ...)
 \arguments{
 \item{y}{univariate time series}
 
+\item{lower}{numeric. lower bound parameter for optimization search}
+
+\item{upper}{numeric. upper bound parameter for optimization search}
+
+\item{tol}{numeric. numerical tolerance for optimization search}
+
 \item{...}{additional arguments}
 }
 \value{
@@ -22,6 +28,7 @@ Identifies lambda for \code{BoxCox} function which mimimzes lag 1 squared
 autocorrelation of \code{tslm} residuals.
 }
 \examples{
+library(ggplot2)
 library(forecastR)
 data("AirPassengers", package = "datasets")
 
@@ -36,9 +43,7 @@ f.lambda <- forecast(a.lambda, h = length(y$out.of.sample))
 
 vals <- cbind(actuals = y$out.of.sample, std = f.std$mean, lambda = f.lambda$mean)
 
-library(ggplot2)
-library(forecast)
-autoplot(vals)
+suppressWarnings(autoplot(vals))
 
 fcst.err <- cbind(std = f.std$mean, lambda = f.lambda$mean) - y$out.of.sample
 autoplot(fcst.err)

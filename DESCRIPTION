@@ -9,7 +9,6 @@ Description: Helps automate time series forecast selection and boosting
 License: MIT + file LICENSE
 LazyData: TRUE
 Imports:
-    Rcpp (>= 0.12.7),
     stats,
     methods,
     settings,
@@ -19,11 +18,11 @@ Imports:
     opera,
     ForecastCombinations,
     TSA,
-    meboot
+    meboot,
+    ggplot2,
+    reshape2
 Suggests:
     testthat,
-    ggplot2,
     datasets,
     covr
-LinkingTo: Rcpp
 RoxygenNote: 5.0.1

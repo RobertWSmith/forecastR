@@ -26,7 +26,9 @@
 #' data('AirPassengers', package='datasets')
 #' fit <- arima(AirPassengers)
 #' fcst <- forecast(fit)
-#' suppressWarnings(autoplot(fcst))
+#'
+#' library(forecast)
+#' (autoplot(fcst))
 forecast <- function(object, h = 18L, ...)
 {
   mdl <- model(object)

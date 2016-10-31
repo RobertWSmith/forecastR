@@ -26,6 +26,7 @@
 #' @importFrom forecast BoxCox
 #'
 #' @examples
+#' library(ggplot2)
 #' library(forecastR)
 #' data("AirPassengers", package = "datasets")
 #'
@@ -40,12 +41,10 @@
 #'
 #' vals <- cbind(actuals = y$out.of.sample, std = f.std$mean, lambda = f.lambda$mean)
 #'
-#' library(ggplot2)
-#' library(forecast)
 #' suppressWarnings(autoplot(vals))
 #'
 #' fcst.err <- cbind(std = f.std$mean, lambda = f.lambda$mean) - y$out.of.sample
-#' suppressWarnings(autoplot(fcst.err))
+#' autoplot(fcst.err)
 optimize.lambda <- function(y, lower = -1.0, upper = 2.0, tol = 0.001, ...)
 {
   gen.func <- function(y)

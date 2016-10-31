@@ -22,6 +22,7 @@
 #' @export
 #'
 #' @examples
+#' library(ggplot2)
 #' library(forecastR)
 #' data('AirPassengers', package = 'datasets')
 #'
@@ -32,11 +33,11 @@
 #' summary(mf)
 #' coef(mf)
 #'
-#' suppressWarnings(autoplot(resid(mf)))
+#' autoplot(resid(mf))
 #'
 #' vals <- window(cbind(Data = ap.split$data, Forecast.Mean = mf.fcst$mean),
 #'     start = c(1958,1))
-#' suppressWarnings(plot(vals, plot.type="single", col=1:2))
+#' autoplot(vals)
 ts.model.fit <- function(y, ts.model.type = c("arfima", "arima", "bats", "ets",
                                               "nnetar", "stlm", "tbats", "tslm"),
   ...)
@@ -156,14 +157,14 @@ ts.model.refit <- function(y, model, ...)
 #' suppressWarnings(autoplot(window(vals, start = c(1958,1))))
 #'
 #' colnames(errs) <- 1:4
-#' autoplot(errs)
+#' suppressWarnings(autoplot(errs))
 #'
 #' abs.errs <- abs(errs)
-#' autoplot(abs.errs)
+#' suppressWarnings(autoplot(abs.errs))
 #'
 #' cum.errs <- as.ts(apply(errs, 2, cumsum))
 #' tsp(cum.errs) <- tsp(cum.errs)
-#' autoplot(cum.errs)
+#' suppressWarnings(autoplot(cum.errs))
 ts.model.autofit <- function(y, lambda = optimize.lambda(y), alpha = 0.05, split = 0.20,
                              return.all.models = FALSE,
                              ts.model.type = c("arfima", "arima", "bats", "ets",

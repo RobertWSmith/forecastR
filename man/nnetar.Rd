@@ -48,7 +48,7 @@ vals <- window(cbind(
  decay = fcst3$mean
  ), start = c(1957,1))
 
-autoplot(vals, na.rm = TRUE)
+suppressWarnings(autoplot(vals, na.rm = TRUE))
 }
 \seealso{
 \code{\link[forecast]{nnetar}}

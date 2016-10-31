@@ -26,32 +26,47 @@
 #' @examples
 #' library(ggplot2)
 #' library(forecastR)
+#' library(reshape2)
+#'
 #' data("AirPassengers", package="datasets")
 #'
-#' ap <- window(AirPassengers, end=c(1959,12))
-#' ap.oos <- window(AirPassengers, start=c(1960,1))
-#' suppressWarnings(autoplot(cbind(ap, ap.oos)))
-#'
 #' split.fctr <- 24
-#' tsm <- ts.multimodel.fit(ap, split=split.fctr)
+#' ap <- ts.split(AirPassengers, split = split.fctr, as.list=TRUE)
+#' ap.ts <- cbind(in.sample = ap$in.sample, out.of.sample = ap$out.of.sample)
+#' ap.df <- as.data.frame(ap.ts)
+#' ap.df$date <- as.Date(ISOdate(as.integer(time(ap$data)),
+#'                               as.integer(cycle(ap$data)), 1))
+#' ap.melt.df <- melt(ap.df, id.vars = "date", na.rm = TRUE)
 #'
-#' mx <- ts.mixture(ap, tsm, split=split.fctr, oos.h = 12)
+#' (ggplot(ap.melt.df, aes(x = date, y = value, color = variable)) + geom_line() +
+#'   ggtitle("Test/Training Set View"))
 #'
-#' vals <- cbind(AirPassengers, mx$mixture.model$response, mx$experts)
-#' colnames(vals) <- c("Data", "Mixture Model", colnames(mx$experts))
-#' suppressWarnings(autoplot(window(vals[,1:2], start=1959)))
+#' tsm <- ts.multimodel.fit(AirPassengers, split=split.fctr)
+#' mx <- ts.mixture(AirPassengers, tsm, split=split.fctr, oos.h = 12)
 #'
-#' fcst <- cbind(mx$mixture.model$response, mx$experts)
-#' fcst.err <- fcst - ap.oos
-#' colnames(fcst.err) <- c("Mixture Model", colnames(mx$experts))
-#' suppressWarnings(autoplot(abs(fcst.err)))
+#' vals <- cbind(AirPassengers, mx$mixture.model$response, mx$forecast)
+#' vals <- window(vals, start=1959)
+#' vals.df <- as.data.frame(vals)
+#' colnames(vals.df) <- c("Data", "Mixture Model", colnames(mx$forecast))
+#' vals.df$date <- as.Date(ISOdate(as.integer(time(vals)),
+#'                                 as.integer(cycle(vals)), 1))
+#' vals.melt <- melt(vals.df, id.var = "date", na.rm = TRUE)
+#' (ggplot(vals.melt, aes(x = date, y = value, color = variable)) + geom_line() +
+#'   ggtitle("All Forecasts"))
 #'
-#' cum.fcst.err <- ts(do.call(cbind, lapply(abs(fcst.err), cumsum)))
-#' tsp(cum.fcst.err) <- tsp(fcst.err)
-#' suppressWarnings(autoplot(cum.fcst.err))
+#' fcst <- cbind(mx$mixture.model$response, mx$test.forecast)
+#' fcst.err <- fcst - ap$out.of.sample
+#' colnames(fcst.err) <- c("Mixture Model", colnames(mx$test.forecast))
+#' fcst.err.df <- as.data.frame(fcst.err)
+#' fcst.err.df$date <- as.Date(ISOdate(as.integer(time(fcst.err)),
+#'                                     as.integer(cycle(fcst.err)), 1))
+#' fcst.err.melt.df <- melt(fcst.err.df, id.var = "date", na.rm = TRUE)
+#' (ggplot(fcst.err.melt.df, aes(x = date, y = value, color = variable)) +
+#'   geom_line() + ggtitle("Error"))
 #'
-#' cum.fcst.err.smry <- as.numeric(cum.fcst.err[nrow(cum.fcst.err), ])
-#' print(sort(cum.fcst.err.smry))
+#' fcst.err.melt.df$value <- abs(fcst.err.melt.df$value)
+#' (ggplot(fcst.err.melt.df, aes(x = date, y = value, color = variable)) +
+#'   geom_line() + ggtitle("Absolute Error"))
 ts.mixture <- function(y, tsm.multi = NULL, split = 0.20, oos.h = 18L,
                        alpha = 0.05, boot.reps = NULL,
                        min.records = as.integer(min(6L, frequency(y))+1L),

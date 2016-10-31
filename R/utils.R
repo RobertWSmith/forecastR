@@ -107,9 +107,9 @@ is.ts.split <- function(x)
 #' Modifies \code{ts.split} to a unified \code{data.frame} object
 #'
 #' @param x \code{ts.split} object
-#' @param ... arguments passed on to \code{\link{as.data.frame}}
+#' @param ... arguments passed on to \code{\link[base]{as.data.frame}}
 #'
-#' @seealso \code{\link{as.data.frame}}
+#' @seealso \code{\link[base]{as.data.frame}}
 #'
 #' @export
 #'
@@ -138,40 +138,6 @@ as.data.frame.ts.split <- function(x, ...)
   df <- data.frame(time = ts.time, cycle = ts.cycle, ts.x)
   colnames(df) <- c("time", "cycle", x.names)
   return(df)
-}
-
-
-#' Tidy \code{ts.split} object into \code{data.frame}.
-#'
-#' @param x \code{ts.split} object
-#' @param ... arguments passed on to \code{as.data.frame}
-#'
-#' @return \code{\link{data.frame}} with `time` column and columns for
-#'   each \code{\link[stats]{ts}} object. If \code{\link[stats]{ts}} inherits
-#'   from \code{mts}, \code{\link{matrix}} or is a
-#'   \code{\link{list}} of \code{\link[stats]{ts}} objects, it is coerced
-#'   to a \code{mts} before using the native call to
-#'   \code{\link{as.data.frame.ts}}.
-#'
-#' @export
-#'
-#' @importFrom stats time cycle frequency deltat
-#' @importFrom broom tidy
-#'
-#' @seealso \code{\link[broom]{tidy}} \code{\link{as.data.frame.ts}}
-#'   \code{\link{as.data.frame.list}}
-#'
-#' @examples
-#' library(forecastR)
-#' library(broom)
-#' x <- ts(1:100, freq=12)
-#' x.split <- ts.split(x)
-#' x.tidy <- tidy(x.split)
-#' is.data.frame(x.tidy)
-#' head(x.tidy)
-tidy.ts.split <- function(x, ...)
-{
-  return(as.data.frame(x, ...))
 }
 
 
