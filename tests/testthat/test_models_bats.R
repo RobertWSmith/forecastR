@@ -1,10 +1,12 @@
+library(testthat)
 context("Testing bats `models.R`.")
+
 test_that("`bats` function", {
-  library(forecast)
-  data("AirPassengers", package = "datasets")
   a <- forecastR::bats(AirPassengers)
   aa <- forecast::bats(AirPassengers)
+
   a.mdl <- model(a)
+
   expect_is(a.mdl, class(aa))
   expect_equal(start(a.mdl$y), start(AirPassengers))
   expect_equal(length(a.mdl$y), length(AirPassengers))

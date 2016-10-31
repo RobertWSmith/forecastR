@@ -10,7 +10,7 @@
 #'   if \code{FALSE}, returns a \code{mts} object with 3 columns
 #' @param short.ts.multiple numeric. Multiple of \code{frequency(x)} which
 #'   if \code{frequency(x) * short.ts.multiple > length(x)} indicates that a
-#'   time series is short. Defaults to 2.25. Controls attribute \code{is.short}.
+#'   time series is short. Defaults to 2. Controls attribute \code{is.short}.
 #' @param ... additional options, not currently used
 #'
 #' @return \code{ts.split} object.
@@ -37,12 +37,8 @@
 #' length(ap.split$data) == length(AirPassengers)
 #' length(ap.split$out.of.sample) == split
 #' length(ap.split$in.sample) == (length(AirPassengers) - split)
-ts.split <- function(x, split = 0.2, as.list = TRUE, short.ts.multiple = NULL, ...)
+ts.split <- function(x, split = 0.2, as.list = TRUE, short.ts.multiple = 2.0, ...)
   {
-  if (is.null(short.ts.multiple))
-  {
-    short.ts.multiple <- package_options("short.ts.frequency.multiple")
-  }
   is.short <- (length(x) < (frequency(x) * short.ts.multiple))
 
   if (is.null(record.count <- dim(x)[1]))
@@ -197,34 +193,31 @@ tidy.ts.split <- function(x, ...)
 #' library(forecastR)
 #' data('AirPassengers', package='datasets')
 #' print('Default Freq. Multiple:', package_options('short.ts.frequency.multiple'))
-#' ## [1] 2.25
+#' ## [1] 2
 #' short.ts.test(AirPassengers) #returns FALSE
 #' short.ts.test(AirPassengers, 15.0) #returns TRUE
-short.ts.test <- function(y, freq.multiple = package_options("short.ts.frequency.multiple"))
+short.ts.test <- function(y, freq.multiple = 2)
 {
   return((frequency(y) * freq.multiple) > length(y))
 }
 
 
 ### template for short time series y.ts <- short.ts(y,
-### freq.multiple = 2.25) y <- y.ts$y fit <- sapply(fit,
+### freq.multiple = 2) y <- y.ts$y fit <- sapply(fit,
 ### function(x) { if (is.ts(x)) return(short.ts.inv(x, y.ts))
 ### return(x) }) template for short time series
 # internal function to parse short time series
 #' @importFrom stats ts start tsp frequency
 short.ts <- function(y, lambda = NULL,
-                     freq.multiple = package_options("short.ts.frequency.multiple"))
+                     freq.multiple = 2)
 {
   orig.y <- y
   orig.freq <- as.numeric(frequency(y))
   needs.transformed <- short.ts.test(y, freq.multiple)
   if (needs.transformed)
     y <- ts(as.numeric(y))
-  log.lambda <- (!is.null(lambda) && (as.integer(round(lambda,0)) == 0L))
-  if (log.lambda)
-    y <- y + 1
   return(list(y = y, freq.multiple = freq.multiple, orig.freq = orig.freq,
-    orig.start = start(orig.y), orig.tsp = tsp(orig.y), log.lambda = log.lambda,
+    orig.start = start(orig.y), orig.tsp = tsp(orig.y),
     was.transformed = needs.transformed))
 }
 

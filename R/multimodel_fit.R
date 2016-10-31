@@ -17,6 +17,8 @@
 #' @param freq.multiple numeric. Multiple of the time series' frequency which
 #'  determines if the provided time series is short. If short, `ts.model.types`
 #'  are selected from a limited list.
+#' @param alpha numeric. significance threshold for \code{\link[forecast]{dm.test}}
+#'   which determines if transformation makes for an improved model
 #' @param ... extra arguments for `ts.model.type`
 #'
 #' @importFrom forecast accuracy tsclean
@@ -38,88 +40,39 @@
 #' {
 #'   print(mf[[nm]])
 #' }
-ts.multimodel.fit <- function(y, split = 0.20, boot.reps = NULL,
+ts.multimodel.fit <- function(y, split = 0.20, boot.reps = NULL, alpha = 0.05,
                               ts.model.types = c("arfima", "arima", "bats",
                                                  "ets", "nnetar", "stlm",
                                                  "tbats", "tslm"),
-                              freq.multiple = package_options("short.ts.frequency.multiple"),
-                              ...)
+                              freq.multiple = 2, ...)
 {
   y.orig <- y
+  kw <- list(...)
+  ts.model.types <- sort(unique(match.arg(ts.model.types, several.ok = TRUE)))
+
   if (!is.null(boot.reps))
   {
-    y <- as.ts(rowMeans(meboot::meboot(y, reps = boot.reps)$ensemble, na.rm=TRUE))
+    y.bs <- meboot::meboot(y, reps = boot.reps)$ensemble
+    y <- rowMeans(y.bs, na.rm = TRUE)
     y[y < 0.0] <- 0.0
-    tsp(y) <- tsp(y.orig)
+    y <- ts(y, start = start(y.orig), frequency = frequency(y.orig))
   }
 
-  if (!is.null(split))
-  {
-    y.split <- ts.split(y, split = split)
-    y <- y.split$in.sample
-    y.oos <- y.split$out.of.sample
-  }
-
-  if (short.ts <- short.ts.test(y, freq.multiple = freq.multiple))
-  {
-    ts.model.types <- sort(unique(package_options("autofit.models.short.ts")))
-  } else
-  {
-    ts.model.types <- sort(unique(match.arg(ts.model.types, several.ok = TRUE)))
-  }
-
-  output <- list()
-  for (i in 1:length(ts.model.types))
-  {
-    nm <- ts.model.types[i]
-    fits <- ts.model.autofit(y, ts.model.type = nm, return.all.models = !is.null(split))#, ...)
-    if (!is.null(split) && !(nm %in% c("bats", "tbats")))
-    {
-      tmp.acc <- tmp.fcsts <- list()
-      for (i in 1:length(fits))
-      {
-        tmp.fcsts[[i]] <- forecast(fits[[i]], h=length(y.oos))
-        if (!short.ts)
-        {
-          tmp.acc[[i]] <- forecast::accuracy(tmp.fcsts[[1]], y.oos)
-        }
-        else
-        {
-          tmp.acc[[i]] <- forecast::accuracy(tmp.fcsts[[1]])
-        }
-      }
-
-      best.fcst <- 1
-      best.acc <- tmp.acc[[best.fcst]]
-      if (length(tmp.fcsts) > 1)
-      {
-        for (i in 2:length(tmp.fcsts))
-        {
-          if (!short.ts)
-          {
-            test.acc <- forecast::accuracy(tmp.fcsts[[i]], y.oos)
-            if (test.acc['Test set', 'MASE'] < best.acc['Test set', 'MASE'])
-            {
-              best.fcst <- i
-            }
-          } else
-          {
-            test.acc <- forecast::accuracy(tmp.fcsts[[i]])
-            if (test.acc['Training set', 'MAPE'] < best.acc['Training set', 'MAPE'])
-            {
-              best.fcst <- i
-            }
-          }
-        }
-      }
-      output[[nm]] <- fits[[best.fcst]]
-    } else
-    {
-      output[[nm]] <- fits
-    }
-  }
-  output <- structure(output, class = 'tsm.multi')
+  output <- lapply(ts.model.types, function(func.name) {
+    return(ts.model.autofit(y, split = split, alpha = alpha,
+                            ts.model.type = func.name,
+                            return.all.models = FALSE, ...))
+    })
+  output <- structure(.mm.prune(output), class = 'tsm.multi')
   return(output)
+}
+
+
+# internal funciton to ensure list is not sparse
+.mm.prune <- function(mm.fits)
+{
+  rm.idx <- !(sapply(mm.fits, function(x) {return( is.null(x) || is.null(x$fit))}))
+  return(mm.fits[rm.idx])
 }
 
 
@@ -152,17 +105,14 @@ ts.multimodel.fit <- function(y, split = 0.20, boot.reps = NULL,
 #' mf.upd <- ts.multimodel.refit(ap.split$data, mf)
 ts.multimodel.refit <- function(y, tsm.multi, ...)
 {
-  fcst.names <- character()
-  for (i in 1:length(tsm.multi))
-  {
-    mdl <- tsm.multi[[i]]
-    tsm.multi[[i]] <- ts.model.refit(y, model = mdl, ...)
-  }
-  return(tsm.multi)
+  refit <- lapply(tsm.multi, function(x) {
+    return(ts.model.refit(y, model = x, ...))
+    })
+  return(refit)
 }
 
 
-#' Update Multimodel Fit
+#' Update & Resample Multimodel Fit
 #'
 #' @param y \code{ts}. Univariate Time Series
 #' @param tsm.multi \code{tsm.multi} object. Model which was fit in call to
@@ -193,44 +143,75 @@ ts.multimodel.refit <- function(y, tsm.multi, ...)
 #' mmf <- ts.multimodel.fit(AirPassengers)
 #'
 #' mmr <- ts.multimodel.resample(AirPassengers, mmf, boot.reps = 25)
-ts.multimodel.resample <- function(y, tsm.multi, boot.reps = 25, split = 0.2,
+ts.multimodel.resample <- function(y, tsm.multi, boot.reps = NULL, split = 0.2,
                                    oos.h = 18L, alpha = 0.05, ...)
 {
+  dta <- is.fcst <- list()
+
   y.orig <- y
   y.split <- ts.split(y, split=split)
-  y.bs <- meboot::meboot(y, reps = boot.reps)$ensemble
-  y.bs[y.bs < 0.0] <- 0.0
-  y.bs <- y.bs + 1
-  y.bs <- as.ts(apply(y.bs, 2, forecast::tsclean, lambda = 0))
+  in.sample <- y.split$in.sample
 
-  tsp(y.bs) <- tsp(y.orig)
-  if (!is.null(split))
+  oos.mdl <- ts.multimodel.refit(y, tsm.multi, ...)
+  oos.fcst <- multiforecast(oos.mdl, h = oos.h, y = y)
+
+  output <- list(
+    y = y,
+    train.data = y.split$in.sample,
+    test.data = y.split$out.of.sample,
+    bootstrapped = (!is.null(boot.reps)),
+    tsm = oos.mdl,
+    forecast = oos.fcst
+    )
+
+  if (!is.null(boot.reps))
   {
+    # bootstrap resampling
+    y.bs.base <- meboot::meboot(y, reps = ifelse(boot.reps^2 > 999, 999, boot.reps^2))$ensemble
+    y.bs.samples <- sapply(1:(boot.reps * 2), function(x) {
+      sample(1:ncol(y.bs.base), boot.reps, replace=TRUE)
+    })
+    y.bs <- apply(y.bs.samples, 2, function(x) {
+      tmp <- y.bs.base[,x]
+      tmp[tmp<0.0] <- 0.0
+      tmp <- rowMeans(tmp, na.rm=TRUE)
+      if (any(tmp < 1))
+        tmp <- tmp+1
+      return(tmp)
+    })
+    y.bs <- as.ts(y.bs)
+    tsp(y.bs) <- tsp(y.orig)
+
     y.bs.split <- ts.split(y.bs, split=split)
     in.sample <- y.bs.split$in.sample
+
+    output$bootstrap.data <- y.bs.split
+
+    dta <- is.fcst <- list()
+
+    for (i in 1:ncol(in.sample))
+    {
+      is.temp <- in.sample[ ,i]
+      oos.temp <- y.bs.split$out.of.sample[ ,i]
+      data.temp <- y.bs.split$data[ ,i]
+
+      is.mdl <- ts.multimodel.refit(is.temp, tsm.multi, ...)
+
+      dta[[i]] <- oos.temp
+      is.fcst[[i]] <- multiforecast(is.mdl, h = nrow(y.bs.split$out.of.sample), y = data.temp)
+    }
+    output$test.data <- dta
+    output$test.forecast <- is.fcst
   } else
   {
-    in.sample <- y.bs
+    # no bootstrap resampling
+    is.mdl <- ts.multimodel.refit(y.split$in.sample, tsm.multi, ...)
+    is.fcst <- multiforecast(is.mdl, h = length(y.split$out.of.sample), y = y.split$in.sample)
+
+    output$test.data <- y.split$out.of.sample
+    output$test.forecast <- is.fcst
   }
 
-  dta <- is.fcst <- output <- list()
-
-  oos.mdl <- ts.multimodel.refit(y.split$data, tsm.multi, ...)
-  oos.fcst <- multiforecast(oos.mdl, h = oos.h, y = y.split$data)
-
-  for (i in 1:ncol(in.sample))
-  {
-    is.mdl <- ts.multimodel.refit(in.sample[ ,i], tsm.multi, ...)
-
-    dta[[i]] <- y.bs.split$out.of.sample[ ,i]
-    is.fcst[[i]] <- multiforecast(is.mdl, h = nrow(y.bs.split$out.of.sample),
-                                  y=y.bs.split$data[ ,i])
-  }
-
-  dta <- do.call(c, dta)
-  is.fcst <- do.call(rbind, is.fcst)
-
-  output <- list(Y = dta, in.sample.experts = is.fcst, out.of.sample.experts = oos.fcst)
   output <- structure(output, class="tsm.multi.resample")
   return(output)
 }

@@ -1,9 +1,7 @@
+library(testthat)
 context("Testing ets `models.R`.")
 
 test_that("`ets` function", {
-  library(forecast)
-  data("AirPassengers", package = "datasets")
-
   a <- forecastR::ets(AirPassengers)
   aa <- forecast::ets(AirPassengers)
 
@@ -22,7 +20,9 @@ test_that("`ets` function", {
   # multiplicative test
   a <- forecastR::ets(AirPassengers, allow.multiplicative.trend = TRUE)
   aa <- forecast::ets(AirPassengers, allow.multiplicative.trend = TRUE)
+
   a.mdl <- model(a)
+
   expect_is(a.mdl, class(aa))
   expect_equal(start(a.mdl$x), start(AirPassengers))
   expect_equal(length(a.mdl$x), length(AirPassengers))

@@ -4,7 +4,7 @@
 \alias{tidy.ts.split}
 \title{Tidy \code{ts.split} object into \code{data.frame}.}
 \usage{
-\method{tidy}{ts.split}(x, ...)
+tidy.ts.split(x, ...)
 }
 \arguments{
 \item{x}{\code{ts.split} object}

@@ -1,10 +1,12 @@
+library(testthat)
 context("Testing tbats `models.R`.")
+
 test_that("`tbats` function", {
-  library(forecast)
-  data("AirPassengers", package = "datasets")
   a <- forecastR::tbats(AirPassengers)
   aa <- forecast::tbats(AirPassengers)
+
   a.mdl <- model(a)
+
   expect_is(a.mdl, class(aa))
   expect_equal(start(a.mdl$y), start(AirPassengers))
   expect_equal(length(a.mdl$y), length(AirPassengers))

@@ -9,11 +9,11 @@
 ts.model.fit(y, ts.model.type = c("arfima", "arima", "bats", "ets", "nnetar",
   "stlm", "tbats", "tslm"), ...)
 
-ts.model.autofit(y, ts.model.type = c("arfima", "arima", "bats", "ets",
-  "nnetar", "stlm", "tbats", "tslm"), lambda = 0, alpha = 0.05,
-  return.all.models = TRUE, ...)
-
 ts.model.refit(y, model, ...)
+
+ts.model.autofit(y, lambda = optimize.lambda(y), alpha = 0.05,
+  split = 0.2, return.all.models = FALSE, ts.model.type = c("arfima",
+  "arima", "bats", "ets", "nnetar", "stlm", "tbats", "tslm"), ...)
 }
 \arguments{
 \item{y}{\code{ts}. Univariate Time Series}
@@ -22,16 +22,18 @@ ts.model.refit(y, model, ...)
 
 \item{...}{additional keyword arguments provided to `ts.model.type` function.}
 
+\item{model}{\code{tsm} object. Model which was fit in call to
+\code{\link[forecastR]{ts.model.fit}}}
+
 \item{lambda}{list of values to pass to \code{lambda} values}
 
 \item{alpha}{numeric. significance threshold for \code{\link[forecast]{dm.test}}
 which determines if transformation makes for an improved model}
 
+\item{split}{numeric. parameter passed to \code{\link[forecastR]{ts.split}}}
+
 \item{return.all.models}{logical. controls if only best in sample fit is returned
 or if all models are returned}
-
-\item{model}{\code{tsm} object. Model which was fit in call to
-\code{\link[forecastR]{ts.model.fit}}}
 }
 \value{
 \code{tsm} object, with subspecialization determined by `ts.model.type`
@@ -43,18 +45,17 @@ argument.
 \description{
 Generic Time Series Model Fit for Package Models
 
-Autofit Time Series models attempting multiple standardized transformations
-
 Update Generic Time Series Model Fit for Package Models
+
+Autofit Time Series models attempting multiple standardized transformations
 }
 \section{Functions}{
 \itemize{
-\item \code{ts.model.autofit}: Autofit Time Series Model
-
 \item \code{ts.model.refit}: Update Time Series Model
+
+\item \code{ts.model.autofit}: Autofit Time Series Model
 }}
 \examples{
-library(ggplot2)
 library(forecastR)
 data('AirPassengers', package = 'datasets')
 
@@ -67,8 +68,31 @@ coef(mf)
 
 autoplot(resid(mf))
 
+vals <- window(cbind(Data = ap.split$data, Forecast.Mean = mf.fcst$mean),
+    start = c(1958,1))
+suppressWarnings(plot(vals, plot.type="single", col=1:2))
+library(forecastR)
+data('AirPassengers', package = 'datasets')
+
+ap.split <- ts.split(AirPassengers)
+
+mf <- ts.model.autofit(ap.split$in.sample, ts.model.type = 'arima', return.all.models = FALSE)
+mf <- ts.model.refit(ap.split$in.sample, mf)
+mf.fcst <- forecast(mf, length(ap.split$out.of.sample))
+print(mf.fcst)
+
 vals <- cbind(Data = ap.split$data, Forecast.Mean = mf.fcst$mean)
-autoplot(window(vals, start = c(1958,1)), na.rm=TRUE)
+suppressWarnings(plot(window(vals, start = c(1958,1)), plot.type="single", col=1:ncol(vals)))
+
+mf2 <- ts.model.refit(ap.split$data, mf)
+mf2.fcst <- forecast(mf2, 24)
+summary(mf2)
+
+vals <- cbind(Data = ap.split$data, In.Sample.Fcst = mf.fcst$mean,
+              Out.Of.Sample.Fcst = mf2.fcst$mean)
+suppressWarnings(plot(window(vals, start = c(1958,1)), plot.type="single", col=1:ncol(vals)))
+
+coef(mf) ==  coef(mf2)
 library(ggplot2)
 library(forecastR)
 data('AirPassengers', package = 'datasets')
@@ -102,28 +126,6 @@ autoplot(abs.errs)
 cum.errs <- as.ts(apply(errs, 2, cumsum))
 tsp(cum.errs) <- tsp(cum.errs)
 autoplot(cum.errs)
-library(ggplot2)
-library(forecastR)
-data('AirPassengers', package = 'datasets')
-
-ap.split <- ts.split(AirPassengers)
-
-mf <- ts.model.autofit(ap.split$in.sample, ts.model.type = 'arima', return.all.models = FALSE)
-mf.fcst <- forecast(mf, length(ap.split$out.of.sample))
-summary(mf)
-
-vals <- cbind(Data = ap.split$data, Forecast.Mean = mf.fcst$mean)
-autoplot(window(vals, start = c(1958,1)), na.rm=TRUE)
-
-mf2 <- ts.model.refit(ap.split$data, mf)
-mf2.fcst <- forecast(mf2, 24)
-summary(mf2)
-
-vals <- cbind(Data = ap.split$data, In.Sample.Fcst = mf.fcst$mean,
-              Out.Of.Sample.Fcst = mf2.fcst$mean)
-autoplot(window(vals, start = c(1958,1)), na.rm=TRUE)
-
-coef(mf) ==  coef(mf2)
 }
 \seealso{
 \code{\link[forecastR]{arima}} \code{\link[forecastR]{arfima}}

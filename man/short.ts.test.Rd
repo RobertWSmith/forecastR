@@ -4,8 +4,7 @@
 \alias{short.ts.test}
 \title{Tests if a time series is short}
 \usage{
-short.ts.test(y,
-  freq.multiple = package_options("short.ts.frequency.multiple"))
+short.ts.test(y, freq.multiple = 2)
 }
 \arguments{
 \item{y}{univariate time series}
@@ -22,7 +21,7 @@ simpler models.
 library(forecastR)
 data('AirPassengers', package='datasets')
 print('Default Freq. Multiple:', package_options('short.ts.frequency.multiple'))
-## [1] 2.25
+## [1] 2
 short.ts.test(AirPassengers) #returns FALSE
 short.ts.test(AirPassengers, 15.0) #returns TRUE
 }

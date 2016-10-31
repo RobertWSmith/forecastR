@@ -2,9 +2,9 @@
 % Please edit documentation in R/multimodel_fit.R
 \name{ts.multimodel.resample}
 \alias{ts.multimodel.resample}
-\title{Update Multimodel Fit}
+\title{Update & Resample Multimodel Fit}
 \usage{
-ts.multimodel.resample(y, tsm.multi, boot.reps = 25, split = 0.2,
+ts.multimodel.resample(y, tsm.multi, boot.reps = NULL, split = 0.2,
   oos.h = 18L, alpha = 0.05, ...)
 }
 \arguments{
@@ -29,7 +29,7 @@ and the models when calling their update methods.}
 argument.
 }
 \description{
-Update Multimodel Fit
+Update & Resample Multimodel Fit
 }
 \examples{
 library(ggplot2)

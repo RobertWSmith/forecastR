@@ -178,7 +178,7 @@ mcleod.li.test <- function(y, alpha = 0.05, max.lag = autocorr.lags(y,
   alpha)) UseMethod("mcleod.li.test")
 .mcleod.li.signif <- function(test, alpha = 0.05)
 {
-  is.signif <- (test$p.values > alpha)
+  is.signif <- (test$p.values < alpha)
   return(structure(list(test = test, is.significant = any(is.signif)),
     class = c("act", "McLeodLiTest")))
 }

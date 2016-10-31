@@ -4,7 +4,7 @@
 \alias{ts.split}
 \title{Splits time series into train & test subsets}
 \usage{
-ts.split(x, split = 0.2, as.list = TRUE, short.ts.multiple = NULL, ...)
+ts.split(x, split = 0.2, as.list = TRUE, short.ts.multiple = 2, ...)
 }
 \arguments{
 \item{x}{Univariate Time Series}
@@ -19,7 +19,7 @@ if \code{FALSE}, returns a \code{mts} object with 3 columns}
 
 \item{short.ts.multiple}{numeric. Multiple of \code{frequency(x)} which
 if \code{frequency(x) * short.ts.multiple > length(x)} indicates that a
-time series is short. Defaults to 2.25. Controls attribute \code{is.short}.}
+time series is short. Defaults to 2. Controls attribute \code{is.short}.}
 
 \item{...}{additional options, not currently used}
 }

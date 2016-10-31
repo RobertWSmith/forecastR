@@ -4,10 +4,9 @@
 \alias{ts.multimodel.fit}
 \title{Multi- Time Series Model Fit}
 \usage{
-ts.multimodel.fit(y, split = 0.2, boot.reps = NULL,
+ts.multimodel.fit(y, split = 0.2, boot.reps = NULL, alpha = 0.05,
   ts.model.types = c("arfima", "arima", "bats", "ets", "nnetar", "stlm",
-  "tbats", "tslm"),
-  freq.multiple = package_options("short.ts.frequency.multiple"), ...)
+  "tbats", "tslm"), freq.multiple = 2, ...)
 }
 \arguments{
 \item{y}{\code{\link[stats]{ts}} object. univariate time series}
@@ -18,6 +17,9 @@ is applied.}
 \item{boot.reps}{integer. Optional parameter, if provided model is fit against
 the mean of `boot.reps` number of bootstrap replicates. Can help smooth
 excess volatility}
+
+\item{alpha}{numeric. significance threshold for \code{\link[forecast]{dm.test}}
+which determines if transformation makes for an improved model}
 
 \item{ts.model.types}{character vector. name of function returing \code{tsm}
 model object}

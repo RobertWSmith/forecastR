@@ -22,7 +22,6 @@
 #' @export
 #'
 #' @examples
-#' library(ggplot2)
 #' library(forecastR)
 #' data('AirPassengers', package = 'datasets')
 #'
@@ -33,20 +32,87 @@
 #' summary(mf)
 #' coef(mf)
 #'
-#' autoplot(resid(mf))
+#' suppressWarnings(autoplot(resid(mf)))
 #'
-#' vals <- cbind(Data = ap.split$data, Forecast.Mean = mf.fcst$mean)
-#' autoplot(window(vals, start = c(1958,1)), na.rm=TRUE)
+#' vals <- window(cbind(Data = ap.split$data, Forecast.Mean = mf.fcst$mean),
+#'     start = c(1958,1))
+#' suppressWarnings(plot(vals, plot.type="single", col=1:2))
 ts.model.fit <- function(y, ts.model.type = c("arfima", "arima", "bats", "ets",
                                               "nnetar", "stlm", "tbats", "tslm"),
   ...)
   {
   ts.model.type <- match.arg(ts.model.type)
   kw <- list(...)
-  y <- as.ts(y)
+
   kw$y <- quote(y)
-  return(do.call(ts.model.type, kw))
+  mdl <- do.call(ts.model.type, kw)
+
+  return(mdl)
 }
+
+
+
+
+#' Update Generic Time Series Model Fit for Package Models
+#'
+#' @describeIn ts.model.fit Update Time Series Model
+#'
+#' @param model \code{tsm} object. Model which was fit in call to
+#'   \code{\link[forecastR]{ts.model.fit}}
+#'
+#' @importFrom stats as.ts
+#'
+#' @return \code{tsm} object, with subspecialization determined by `ts.model.type`
+#' argument.
+#'
+#' @seealso \code{\link[forecastR]{ts.model.fit}}
+#'
+#' @export
+#'
+#' @examples
+#' library(forecastR)
+#' data('AirPassengers', package = 'datasets')
+#'
+#' ap.split <- ts.split(AirPassengers)
+#'
+#' mf <- ts.model.autofit(ap.split$in.sample, ts.model.type = 'arima', return.all.models = FALSE)
+#' mf <- ts.model.refit(ap.split$in.sample, mf)
+#' mf.fcst <- forecast(mf, length(ap.split$out.of.sample))
+#' print(mf.fcst)
+#'
+#' vals <- cbind(Data = ap.split$data, Forecast.Mean = mf.fcst$mean)
+#' suppressWarnings(plot(window(vals, start = c(1958,1)), plot.type="single", col=1:ncol(vals)))
+#'
+#' mf2 <- ts.model.refit(ap.split$data, mf)
+#' mf2.fcst <- forecast(mf2, 24)
+#' summary(mf2)
+#'
+#' vals <- cbind(Data = ap.split$data, In.Sample.Fcst = mf.fcst$mean,
+#'               Out.Of.Sample.Fcst = mf2.fcst$mean)
+#' suppressWarnings(plot(window(vals, start = c(1958,1)), plot.type="single", col=1:ncol(vals)))
+#'
+#' coef(mf) ==  coef(mf2)
+ts.model.refit <- function(y, model, ...)
+{
+  y.orig <- y
+  kw <- list(...)
+
+  mdl <- model(model)
+
+  kw$y <- quote(y)
+
+  kw$model <- mdl
+  if (!is.character(mdl))
+    kw$model <- quote(mdl)
+
+  func.name <- model$function.name
+  if (is.null(func.name))
+    func.name <- model$fit$function.name
+
+  mdl <- do.call(func.name, kw)
+  return(mdl)
+}
+
 
 
 #' Autofit Time Series models attempting multiple standardized transformations
@@ -58,6 +124,7 @@ ts.model.fit <- function(y, ts.model.type = c("arfima", "arima", "bats", "ets",
 #'   which determines if transformation makes for an improved model
 #' @param return.all.models logical. controls if only best in sample fit is returned
 #'   or if all models are returned
+#' @param split numeric. parameter passed to \code{\link[forecastR]{ts.split}}
 #'
 #' @importFrom stats AIC
 #'
@@ -86,7 +153,7 @@ ts.model.fit <- function(y, ts.model.type = c("arfima", "arima", "bats", "ets",
 #'
 #' vals <- cbind(vals, ap.split$data)
 #' colnames(vals) <- c(1:length(mf.fcst), "Data")
-#' autoplot(window(vals, start = c(1958,1)), na.rm=TRUE)
+#' suppressWarnings(autoplot(window(vals, start = c(1958,1))))
 #'
 #' colnames(errs) <- 1:4
 #' autoplot(errs)
@@ -97,147 +164,122 @@ ts.model.fit <- function(y, ts.model.type = c("arfima", "arima", "bats", "ets",
 #' cum.errs <- as.ts(apply(errs, 2, cumsum))
 #' tsp(cum.errs) <- tsp(cum.errs)
 #' autoplot(cum.errs)
-ts.model.autofit <- function(y, ts.model.type = c("arfima", "arima", "bats",
-                                                  "ets", "nnetar", "stlm",
-                                                  "tbats", "tslm"),
-                             lambda = 0,
-                             alpha = 0.05, return.all.models = TRUE, ...)
+ts.model.autofit <- function(y, lambda = optimize.lambda(y), alpha = 0.05, split = 0.20,
+                             return.all.models = FALSE,
+                             ts.model.type = c("arfima", "arima", "bats", "ets",
+                                               "nnetar", "stlm", "tbats", "tslm"),
+                             ...)
 {
+  #internal function to standardize output
+  .fcst.acc <- function(fit, y.oos, is.short)
+  {
+    if (is.short)
+    {
+      fcst <- forecast(fit)
+      acc <- forecast::accuracy(fcst)
+    } else
+    {
+      fcst <- forecast(fit, h = length(y.oos))
+      tsp(fcst$mean) <- tsp(y.oos)
+      acc <- forecast::accuracy(fcst, y.oos)
+    }
+    outputs <- list(fit = fit, forecast = fcst, accuracy = acc)
+    outputs <- structure(outputs, class = "tsm.autofit")
+    return(outputs)
+  }
+
+  #makes sure values is comprable to a number
+  .acc.avail <- function(x)
+  {
+    return(!(is.na(x) || is.nan(x) || is.null(x)))
+  }
+
+  is.short <- TRUE
   ts.model.type <- match.arg(ts.model.type)
-  lambda <- as.numeric(lambda)
-  temp.lambda <- try({forecast::BoxCox.lambda(y, "loglik")}, silent = TRUE)
-  if (!inherits(temp.lambda, "try-error"))
-  {
-    lambda <- c(lambda, temp.lambda)
-  }
-
-  outputs <- list()
-  if (!(ts.model.type %in% c("bats", "tbats")))
-  {
-    lambda <- as.numeric(lambda)
-    if (length(y) > 2.25 * frequency(y))
-    {
-      temp.lambda <- try({forecast::BoxCox.lambda(y, "loglik")}, silent = TRUE)
-      if (!inherits(temp.lambda, "try-error"))
-      {
-        lambda <- c(lambda, temp.lambda)
-      }
-    }
-    lambda <- sort(unique(lambda))
-
-    best.lambda <- NULL
-    fit <- ts.model.fit(y, ts.model.type = ts.model.type, ...)
-    best.fit <- fit
-    outputs[[length(outputs)+1]] <- fit
-
-    for (lmb in lambda)
-    {
-      fit <- ts.model.fit(y, ts.model.type = ts.model.type, lambda = lmb, ...)
-      outputs[[length(outputs)+1]] <- fit
-      aic.len <- try({length(AIC(model(fit)))}, silent = TRUE)
-      aic.len <- ifelse(inherits(aic.len, "try-error"), 0, aic.len)
-
-      if ((ts.model.type %in% c("nnetar", "stlm")))
-      {
-        if (sum(residuals(fit), na.rm=TRUE)^2 < sum(residuals(best.fit), na.rm=TRUE)^2)
-        {
-          best.fit <- fit
-          best.lambda <- lmb
-        }
-      } else if (aic.len > 0 && AIC(model(fit)) < AIC(model(best.fit)))
-      {
-          best.fit <- fit
-          best.lambda <- lmb
-      } else if (sum(residuals(fit)^2) < sum(residuals(best.fit)^2))
-      {
-        best.fit <- fit
-        best.lambda <- lmb
-      }
-
-    }
-  } else
-  {
-    outputs <- best.fit <- ts.model.fit(y, ts.model.type = ts.model.type, ...)
-  }
-
-  if (return.all.models)
-  {
-    best.fit <- outputs
-  }
-  return(best.fit)
-}
-
-
-#' Update Generic Time Series Model Fit for Package Models
-#'
-#' @describeIn ts.model.fit Update Time Series Model
-#'
-#' @param model \code{tsm} object. Model which was fit in call to
-#'   \code{\link[forecastR]{ts.model.fit}}
-#'
-#' @importFrom stats as.ts
-#'
-#' @return \code{tsm} object, with subspecialization determined by `ts.model.type`
-#' argument.
-#'
-#' @seealso \code{\link[forecastR]{ts.model.fit}}
-#'
-#' @export
-#'
-#' @examples
-#' library(ggplot2)
-#' library(forecastR)
-#' data('AirPassengers', package = 'datasets')
-#'
-#' ap.split <- ts.split(AirPassengers)
-#'
-#' mf <- ts.model.autofit(ap.split$in.sample, ts.model.type = 'arima', return.all.models = FALSE)
-#' mf.fcst <- forecast(mf, length(ap.split$out.of.sample))
-#' summary(mf)
-#'
-#' vals <- cbind(Data = ap.split$data, Forecast.Mean = mf.fcst$mean)
-#' autoplot(window(vals, start = c(1958,1)), na.rm=TRUE)
-#'
-#' mf2 <- ts.model.refit(ap.split$data, mf)
-#' mf2.fcst <- forecast(mf2, 24)
-#' summary(mf2)
-#'
-#' vals <- cbind(Data = ap.split$data, In.Sample.Fcst = mf.fcst$mean,
-#'               Out.Of.Sample.Fcst = mf2.fcst$mean)
-#' autoplot(window(vals, start = c(1958,1)), na.rm=TRUE)
-#'
-#' coef(mf) ==  coef(mf2)
-ts.model.refit <- function(y, model, ...)
-{
   y.orig <- y
-  kw <- list(...)
+  y.oos <- NULL
 
-
-  mdl <- model(model)
-  log.lambda <- ("lambda" %in% names(mdl)) && is.numeric(mdl$lambda) && as.integer(round(mdl$lambda)) == 0L
-  if (log.lambda)
+  if (!is.null(split))
   {
-    y[y<0] <- 0.0
-    y <- y + 1
-    tsp(y) <- tsp(y.orig)
+    y.split <- ts.split(y, split = split)
+    # overwrite is.short w/ split value if available
+    is.short <- attr(y.split, "is.short") || is.null(attr(y.split, "is.short"))
   }
 
-  kw$y <- quote(y)
+  if (!is.short)
+  {
+    y <- y.split$in.sample
+    y.oos <- y.split$out.of.sample
+  }
 
-  kw$model <- mdl
-  if (!is.character(mdl))
-    kw$model <- quote(mdl)
+  if (is.short && (ts.model.type == "stlm"))
+  {
+    # if we have a short time series, silently return NULL when user attempts to model
+    message("`stlm` models require at least frequency * 2 units of history. No model returned.")
+    return(NULL)
+  }
 
-  return(do.call(model$function.name, kw))
+  # BATS / TBATS models are already able to auto-fit to best in-sample AIC
+  if (ts.model.type %in% c("bats", "tbats"))
+  {
+    fit <- ts.model.fit(y, ts.model.type = ts.model.type, ...)
+    return(.fcst.acc(fit, y.oos, is.short=is.short))
+  }
+
+  if (length(lambda) == 1L)
+  {
+    fit <- ts.model.fit(y, ts.model.type = ts.model.type, lambda = lambda, ...)
+    return(.fcst.acc(fit, y.oos, is.short=is.short))
+  }
+
+  # loop over lambdas, fitting each model
+  outputs <- lapply(lambda, function(tst.lambda) {
+    fit <- ts.model.fit(y, ts.model.type = ts.model.type, lambda = tst.lambda, ...)
+    return(.fcst.acc(fit, y.oos, is.short=is.short))
+  })
+
+  # no need to check for in-sample best if we want all models returned
+  if (return.all.models)
+    return(outputs)
+
+  # seed with first model, then loop over the others comparing each time
+  best.idx <- 1L
+  best.acc <- outputs[[best.idx]]$accuracy
+
+  acc.row <- ifelse(is.short, "Training set", "Test set")
+  stat.rankings <- c("MASE", "MAPE", "MPE", "MAE", "RMSE", "ME")
+
+  for (i in (best.idx+1L):length(outputs))
+  {
+    #ensure variables are cleared between iterations
+    test.acc <- NULL
+    test.acc <- outputs[[i]]$accuracy
+    for (rnk in stat.rankings)
+    {
+      best.avail <- .acc.avail(best.acc[acc.row, rnk])
+      test.avail <- .acc.avail(test.acc[acc.row, rnk])
+
+      ## have data from both and best is better than test
+      ## OR best is available and test is not
+      ## don't change anything
+      if ((best.avail & test.avail) &&
+              (test.acc[acc.row, rnk]^2 >= best.acc[acc.row, rnk]^2))
+      {
+        break
+      } else if (best.avail & !test.avail)
+      {
+        break
+      } else {
+        ## `i` is the index iterator, `rnk` is the stat rankings iterator
+        best.idx <- i
+        best.acc <- test.acc
+        # break upon first comparison (inner for loop over stat rankings)
+        break
+      }
+    }
+  }
+  return(outputs[[best.idx]])
 }
-
-
-
-
-
-
-
-
 
 
 ### internal function, baseline forecasts is used inside

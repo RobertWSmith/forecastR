@@ -1,10 +1,12 @@
+library(testthat)
 context("Testing stlm `models.R`.")
+
 test_that("`stlm` function", {
-  library(forecast)
-  data("AirPassengers", package = "datasets")
   a <- forecastR::stlm(AirPassengers)
   aa <- forecast::stlm(AirPassengers)
+
   a.mdl <- model(a)
+
   expect_is(a.mdl, class(aa))
   expect_equal(start(a.mdl$x), start(AirPassengers))
   expect_equal(length(a.mdl$x), length(AirPassengers))

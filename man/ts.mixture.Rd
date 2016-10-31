@@ -5,8 +5,8 @@
 \title{Mixture Model fit}
 \usage{
 ts.mixture(y, tsm.multi = NULL, split = 0.2, oos.h = 18L, alpha = 0.05,
-  boot.reps = 25, min.records = as.integer(min(12L, frequency(y)) + 1L),
-  ...)
+  boot.reps = NULL, min.records = as.integer(min(6L, frequency(y)) + 1L),
+  return.models = is.null(tsm.multi), ...)
 }
 \arguments{
 \item{y}{\code{\link[stats]{ts}} object. univariate time series}
@@ -25,6 +25,9 @@ output.}
 \item{min.records}{integer. number of records identifying a minimum sample for
 splitting the time series into subsets for in-sample cross validation of the
 model fits}
+
+\item{return.models}{logical. if \code{TRUE} then updated models are
+returned as `models` field, else updated models are not returned.}
 
 \item{...}{extra arguments for `ts.model.type`}
 }
@@ -45,13 +48,13 @@ tsm <- ts.multimodel.fit(ap, split=split.fctr)
 
 mx <- ts.mixture(ap, tsm, split=split.fctr, oos.h = 12)
 
-vals <- cbind(AirPassengers, mx$mixture.model$response, mx$out.of.sample.experts)
-colnames(vals) <- c("Data", "Mixture Model", colnames(mx$out.of.sample.experts))
+vals <- cbind(AirPassengers, mx$mixture.model$response, mx$experts)
+colnames(vals) <- c("Data", "Mixture Model", colnames(mx$experts))
 autoplot(window(vals[,1:2], start=1959))
 
-fcst <- cbind(mx$mixture.model$response, mx$out.of.sample.experts)
+fcst <- cbind(mx$mixture.model$response, mx$experts)
 fcst.err <- fcst - ap.oos
-colnames(fcst.err) <- c("Mixture Model", colnames(mx$out.of.sample.experts))
+colnames(fcst.err) <- c("Mixture Model", colnames(mx$experts))
 autoplot(abs(fcst.err))
 
 cum.fcst.err <- ts(do.call(cbind, lapply(abs(fcst.err), cumsum)))
