@@ -26,7 +26,7 @@ NULL
 PACKAGE_OPTIONS <- settings::options_manager(
   autofit.models = c("arfima", "arima", "bats", "ets", "nnetar", "stlm", "tbats", "tslm"),
   autofit.models.short.ts = c("arima", "ets"),
-  short.ts.frequency.multiple = 2.25,
+  short.ts.frequency.multiple = 2,
   ts.fields = list(
     arima = c("residuals", "x"),
     arfima = c("residuals", "x", "fitted"),

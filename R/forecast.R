@@ -15,6 +15,7 @@
 #' @seealso \code{\link[forecast]{forecast}}
 #'
 #' @importFrom forecast forecast
+#' @importFrom stats hasTsp
 #'
 #' @export
 #'
@@ -25,19 +26,26 @@
 #' data('AirPassengers', package='datasets')
 #' fit <- arima(AirPassengers)
 #' fcst <- forecast(fit)
-#' autoplot(fcst)
-forecast <- function(object, h=18L, ...)
+#'
+#' ##autoplot(fcst)
+forecast <- function(object, h = 18L, ...)
 {
   mdl <- model(object)
-  log.lambda <- ("lambda" %in% names(mdl)) && is.numeric(mdl$lambda) && as.integer(round(mdl$lambda)) == 0L
   fcst <- forecast::forecast(mdl, h=h, ...)
-  if (log.lambda)
+
+  #convert bounds to time series matrix w/ tsp of fcst$mean
+  if ("lower" %in% names(fcst))
   {
-    fcst$mean <- fcst$mean - 1.0
-    fcst$x <- fcst$x - 1.0
-    fcst$lower <- fcst$lower - 1.0
-    fcst$upper <- fcst$upper - 1.0
+    fcst$lower <- hasTsp(as.ts(fcst$lower))
+    tsp(fcst$lower) <- tsp(fcst$mean)
   }
+
+  if ("upper" %in% names(fcst))
+  {
+    fcst$upper <- hasTsp(as.ts(fcst$upper))
+    tsp(fcst$upper) <- tsp(fcst$mean)
+  }
+
   return(fcst)
 }
 
@@ -45,21 +53,25 @@ forecast <- function(object, h=18L, ...)
 #'
 #' @param y \code{ts} univariate time series
 #' @param h integer. number of periods to forecast
+#' @param lambda numeric. parameter for Box-Cox transformation
 #' @param ... additional arguments
 #' @export
-baseline.forecast <- function(y, h=18L, ...)
+baseline.forecast <- function(y, h = 18L, lambda = optimize.lambda(y), ...)
 {
   y.orig <- y
   y.ts <- short.ts(y)
   y <- y.ts$y
 
-  naive.fcst <- forecast::naive(y, h=h, ...)
-  mean.fcst <- forecast::meanf(y, h=h, ...)
-  theta.fcst <- forecast::thetaf(y, h=h, ...)
+  naive.fcst <- forecast::naive(y, h = h, lambda = lambda, ...)
+  mean.fcst <- forecast::meanf(y, h = h, lambda = lambda, ...)
+  theta.fcst <- forecast::thetaf(y, h = h, ...)
 
-  output <- cbind(naive.fcst$mean, mean.fcst$mean, theta.fcst$mean)
-  if (y.ts$was.transformed)
-    output <- ts(output, start = tsp(y.orig)[2]+deltat(y.orig), frequency = frequency(y.orig))
+  output <- ts(cbind(
+    naive.fcst$mean,
+    mean.fcst$mean,
+    theta.fcst$mean
+    ), start=tsp(y.orig)[2]+deltat(y.orig), frequency=frequency(y.orig))
+
   colnames(output) <- c("naive", "mean", "theta")
   return(output)
 }
@@ -72,10 +84,12 @@ baseline.forecast <- function(y, h=18L, ...)
 #'   forecasts are also provided.
 #' @param ... additional arguments
 #'
+#' @importFrom stats end
+#'
 #' @export
 #'
 #' @return \code{mts} of forecast means w/ named columns
-multiforecast <- function(object.list, h=18L, y=NULL, ...)
+multiforecast <- function(object.list, h = 18L, y = NULL, ...)
 {
   if (!is.null(y))
   {
@@ -86,20 +100,22 @@ multiforecast <- function(object.list, h=18L, y=NULL, ...)
   means.fcst <- do.call(cbind, lapply(object.list, function(x) {
     fcst <- forecast(x, h=h)
     ff <- fitted(fcst)
-    e <- end(ff)
-    if (length(e) > 1)
-      e <- e[1] + (deltat(ff) * e[2])
-    else
-      e <- e[1] + deltat(ff)
+    e <- tsp(ff)[2] + deltat(ff)
     fcst <- ts(as.numeric(fcst$mean), start = e, frequency=frequency(ff))
     return(fcst)
   }))
-  colnames(means.fcst) <- names(object.list)
+
+  colnames(means.fcst) <- sapply(object.list, function(x) {
+    if (is.null(x$fit$function.name))
+      return(x$function.name)
+    return(x$fit$function.name)
+  })
 
   if (!is.null(y))
   {
+    mf.names <- colnames(means.fcst)
     means.fcst <- cbind(base.fcst, means.fcst)
-    colnames(means.fcst) <- c(colnames(base.fcst), names(object.list))
+    colnames(means.fcst) <- c(colnames(base.fcst), mf.names)
   }
   return(means.fcst)
 }

@@ -1,11 +1,14 @@
+library(testthat)
 context("Testing arfima `models.R`.")
+
 test_that("`arfima` function", {
-  library(forecast)
-  data("AirPassengers", package = "datasets")
   a <- forecastR::arfima(AirPassengers)
   aa <- forecast::arfima(AirPassengers)
+
   a.mdl <- model(a)
+
   expect_is(a.mdl, class(aa))
+
   expect_equal(start(a.mdl$x), start(AirPassengers))
   expect_equal(length(a.mdl$x), length(AirPassengers))
   expect_equal(frequency(a.mdl$x), frequency(AirPassengers))

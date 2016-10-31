@@ -1,10 +1,12 @@
+library(testthat)
 context("Testing tslm `models.R`.")
+
 test_that("`tslm` function", {
-  library(forecast)
-  data("AirPassengers", package = "datasets")
   a <- forecastR::tslm(AirPassengers)
   aa <- forecast::tslm(AirPassengers ~ trend + season)
+
   a.mdl <- model(a)
+
   expect_is(a.mdl, class(aa))
   expect_equal(start(resid(a.mdl)), start(AirPassengers))
   expect_equal(length(resid(a.mdl)), length(AirPassengers))

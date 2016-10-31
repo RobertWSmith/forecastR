@@ -9,7 +9,7 @@
 \arguments{
 \item{x}{\code{ts.split} object}
 
-\item{...}{arguments passed on to \code{\link{as.data.frame}}}
+\item{...}{arguments passed on to \code{\link[base]{as.data.frame}}}
 }
 \description{
 Modifies \code{ts.split} to a unified \code{data.frame} object
@@ -22,6 +22,6 @@ split.df <- as.data.frame(split.ex)
 head(split.df)
 }
 \seealso{
-\code{\link{as.data.frame}}
+\code{\link[base]{as.data.frame}}
 }
 

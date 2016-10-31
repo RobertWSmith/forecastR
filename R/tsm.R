@@ -123,6 +123,12 @@ model.tsm <- function(object, ...)
   return(object$model)
 }
 
+#' @export
+model.tsm.autofit <- function(object, ...)
+{
+  return(model(object$fit))
+}
+
 
 #' Time Series Model Assignnment
 #'
@@ -138,5 +144,13 @@ model.tsm <- function(object, ...)
 `model<-.tsm` <- function(object, value)
 {
   object$model <- value
+  return(object)
+}
+
+
+#' @export
+`model<-.tsm.autofit` <- function(object, value)
+{
+  model(object$fit) <- value
   return(object)
 }

@@ -6,10 +6,9 @@ Author: Robert Smith
 Maintainer: Robert Smith <rob_smith@goodyear.com>
 Description: Helps automate time series forecast selection and boosting
     parameter estimation.
-License: MIT
+License: MIT + file LICENSE
 LazyData: TRUE
 Imports:
-    Rcpp (>= 0.12.7),
     stats,
     methods,
     settings,
@@ -17,21 +16,13 @@ Imports:
     car,
     broom,
     opera,
+    ForecastCombinations,
     TSA,
-    meboot
+    meboot,
+    ggplot2,
+    reshape2
 Suggests:
     testthat,
-    ggplot2
-LinkingTo: Rcpp
+    datasets,
+    covr
 RoxygenNote: 5.0.1
-Collate:
-    'autocorrelation_tests.R'
-    'forecast.R'
-    'models.R'
-    'mixture_model_fit.R'
-    'model_fit.R'
-    'multimodel_fit.R'
-    'pkgname.R'
-    'transformations.R'
-    'tsm.R'
-    'utils.R'

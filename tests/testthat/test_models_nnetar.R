@@ -1,8 +1,7 @@
+library(testthat)
 context("Testing nnetar `models.R`.")
-test_that("`nnetar` function", {
-  library(forecast)
-  data("AirPassengers", package = "datasets")
 
+test_that("`nnetar` function", {
   a <- forecastR::nnetar(AirPassengers)
   aa <- forecast::nnetar(AirPassengers)
 

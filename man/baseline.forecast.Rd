@@ -4,12 +4,14 @@
 \alias{baseline.forecast}
 \title{Baseline / Null Hypothesis Forecasts}
 \usage{
-baseline.forecast(y, h = 18L, ...)
+baseline.forecast(y, h = 18L, lambda = optimize.lambda(y), ...)
 }
 \arguments{
 \item{y}{\code{ts} univariate time series}
 
 \item{h}{integer. number of periods to forecast}
+
+\item{lambda}{numeric. parameter for Box-Cox transformation}
 
 \item{...}{additional arguments}
 }
