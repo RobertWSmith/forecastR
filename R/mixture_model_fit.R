@@ -38,8 +38,8 @@
 #'                               as.integer(cycle(ap$data)), 1))
 #' ap.melt.df <- melt(ap.df, id.vars = "date", na.rm = TRUE)
 #'
-#' (ggplot(ap.melt.df, aes(x = date, y = value, color = variable)) + geom_line() +
-#'   ggtitle("Test/Training Set View"))
+#' ##(ggplot(ap.melt.df, aes(x = date, y = value, color = variable)) + geom_line() +
+#' ##   ggtitle("Test/Training Set View"))
 #'
 #' tsm <- ts.multimodel.fit(AirPassengers, split=split.fctr)
 #' mx <- ts.mixture(AirPassengers, tsm, split=split.fctr, oos.h = 12)
@@ -51,8 +51,8 @@
 #' vals.df$date <- as.Date(ISOdate(as.integer(time(vals)),
 #'                                 as.integer(cycle(vals)), 1))
 #' vals.melt <- melt(vals.df, id.var = "date", na.rm = TRUE)
-#' (ggplot(vals.melt, aes(x = date, y = value, color = variable)) + geom_line() +
-#'   ggtitle("All Forecasts"))
+#' ## (ggplot(vals.melt, aes(x = date, y = value, color = variable)) + geom_line() +
+#' ##   ggtitle("All Forecasts"))
 #'
 #' fcst <- cbind(mx$mixture.model$response, mx$test.forecast)
 #' fcst.err <- fcst - ap$out.of.sample
@@ -61,12 +61,12 @@
 #' fcst.err.df$date <- as.Date(ISOdate(as.integer(time(fcst.err)),
 #'                                     as.integer(cycle(fcst.err)), 1))
 #' fcst.err.melt.df <- melt(fcst.err.df, id.var = "date", na.rm = TRUE)
-#' (ggplot(fcst.err.melt.df, aes(x = date, y = value, color = variable)) +
-#'   geom_line() + ggtitle("Error"))
+#' ## (ggplot(fcst.err.melt.df, aes(x = date, y = value, color = variable)) +
+#' ##   geom_line() + ggtitle("Error"))
 #'
 #' fcst.err.melt.df$value <- abs(fcst.err.melt.df$value)
-#' (ggplot(fcst.err.melt.df, aes(x = date, y = value, color = variable)) +
-#'   geom_line() + ggtitle("Absolute Error"))
+#' ## (ggplot(fcst.err.melt.df, aes(x = date, y = value, color = variable)) +
+#' ##   geom_line() + ggtitle("Absolute Error"))
 ts.mixture <- function(y, tsm.multi = NULL, split = 0.20, oos.h = 18L,
                        alpha = 0.05, boot.reps = NULL,
                        min.records = as.integer(min(6L, frequency(y))+1L),

@@ -45,7 +45,7 @@
 #'  decay = fcst3$mean
 #'  ), start = c(1957,1))
 #'
-#' suppressWarnings(autoplot(vals, na.rm = TRUE))
+#' ## suppressWarnings(autoplot(vals, na.rm = TRUE))
 nnetar <- function(y, model = NULL, lambda = NULL, ...)
 {
   model.name <- "nnetar"

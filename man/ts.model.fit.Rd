@@ -67,11 +67,11 @@ mf.fcst <- forecast(mf, length(ap.split$out.of.sample))
 summary(mf)
 coef(mf)
 
-autoplot(resid(mf))
+## autoplot(resid(mf))
 
-vals <- window(cbind(Data = ap.split$data, Forecast.Mean = mf.fcst$mean),
-    start = c(1958,1))
-autoplot(vals)
+## vals <- window(cbind(Data = ap.split$data, Forecast.Mean = mf.fcst$mean),
+##   start = c(1958,1))
+## autoplot(vals)
 library(forecastR)
 data('AirPassengers', package = 'datasets')
 
@@ -83,7 +83,7 @@ mf.fcst <- forecast(mf, length(ap.split$out.of.sample))
 print(mf.fcst)
 
 vals <- cbind(Data = ap.split$data, Forecast.Mean = mf.fcst$mean)
-suppressWarnings(plot(window(vals, start = c(1958,1)), plot.type="single", col=1:ncol(vals)))
+## suppressWarnings(plot(window(vals, start = c(1958,1)), plot.type="single", col=1:ncol(vals)))
 
 mf2 <- ts.model.refit(ap.split$data, mf)
 mf2.fcst <- forecast(mf2, 24)
@@ -91,9 +91,7 @@ summary(mf2)
 
 vals <- cbind(Data = ap.split$data, In.Sample.Fcst = mf.fcst$mean,
               Out.Of.Sample.Fcst = mf2.fcst$mean)
-suppressWarnings(plot(window(vals, start = c(1958,1)), plot.type="single", col=1:ncol(vals)))
-
-coef(mf) ==  coef(mf2)
+## suppressWarnings(plot(window(vals, start = c(1958,1)), plot.type="single", col=1:ncol(vals)))
 library(ggplot2)
 library(forecastR)
 data('AirPassengers', package = 'datasets')
@@ -107,26 +105,24 @@ mf <- ts.model.autofit(ap.split$in.sample, ts.model.type = 'arima')
 for (i in 1:length(mf))
 {
   print(i)
-  print(mf[[i]])
-  mf.fcst[[i]] <- forecast(mf[[i]], length(ap.split$out.of.sample))
+  mdl <- mf[[i]]
+  print(mdl)
 }
 
-vals <- do.call(cbind, lapply(mf.fcst, function(x) { x$mean }))
-errs <- vals - ap.split$out.of.sample
+vals <- cbind(
+   in.sample = ap.split$in.sample,
+   out.of.sample = ap.split$out.of.sample,
+   forecast = mf$forecast$mean
+   )
 
-vals <- cbind(vals, ap.split$data)
-colnames(vals) <- c(1:length(mf.fcst), "Data")
-suppressWarnings(autoplot(window(vals, start = c(1958,1))))
+cn <- c("in.sample", "out.of.sample", "forecast")
+colnames(vals) <- cn
+head(cn)
+## plot(cn, col=1:ncol(cn))
 
-colnames(errs) <- 1:4
-suppressWarnings(autoplot(errs))
-
-abs.errs <- abs(errs)
-suppressWarnings(autoplot(abs.errs))
-
-cum.errs <- as.ts(apply(errs, 2, cumsum))
-tsp(cum.errs) <- tsp(cum.errs)
-suppressWarnings(autoplot(cum.errs))
+errs <- mf$forecast$mean - ap.split$out.of.sample
+print(errs)
+## plot(errs)
 }
 \seealso{
 \code{\link[forecastR]{arima}} \code{\link[forecastR]{arfima}}

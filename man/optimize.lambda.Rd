@@ -43,9 +43,9 @@ f.lambda <- forecast(a.lambda, h = length(y$out.of.sample))
 
 vals <- cbind(actuals = y$out.of.sample, std = f.std$mean, lambda = f.lambda$mean)
 
-suppressWarnings(autoplot(vals))
+## suppressWarnings(autoplot(vals))
 
 fcst.err <- cbind(std = f.std$mean, lambda = f.lambda$mean) - y$out.of.sample
-autoplot(fcst.err)
+## autoplot(fcst.err)
 }
 

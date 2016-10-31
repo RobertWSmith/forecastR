@@ -28,8 +28,7 @@ data('AirPassengers', package='datasets')
 fit <- arima(AirPassengers)
 fcst <- forecast(fit)
 
-library(forecast)
-(autoplot(fcst))
+##autoplot(fcst)
 }
 \seealso{
 \code{\link[forecast]{forecast}}

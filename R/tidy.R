@@ -2,7 +2,7 @@
 
 #' Automatic conversion of \code{ts} and \code{mts} objects to \code{data.frame}
 #'
-#' @param object a \code{ts} or \code{mts} object
+#' @param x a \code{ts} or \code{mts} object
 #' @param na.rm logical. If \code{TRUE}, when numeric values are coalesced,
 #'   missing observations are dropped, otherwise they are kept as \code{NA}
 #' @param variable.name character. Name of column which indicates the source of
@@ -21,20 +21,21 @@
 #'
 #' tidy.ap <- tidy(ap)
 #' head(tidy.ap)
-tidy.ts <- function(object, na.rm=TRUE, variable.name = "variable",
+.tidy.ts <- function(x, na.rm=TRUE, variable.name = "variable",
                     value.name = "value", ...)
 {
-  value.name <- substitute(deparse(object))
-  obj <- as.data.frame(object)
-  colnames(obj) <- ifelse(inherits(object, "mts"), colnames(object), value.name)
+  obj <- as.data.frame(x)
+  colnames(obj) <- ifelse(inherits(x, "mts"), colnames(x), value.name)
 
-  obj$time <- as.numeric(time(object))
-  obj$cycle <- as.integer(cycle(object))
+  obj$time <- as.numeric(time(x))
+  obj$cycle <- as.integer(cycle(x))
 
-  obj <- reshape2::melt(obj, id.vars=c("time", "cycle"), na.rm = na.rm)
+  obj <- reshape2::melt(obj, id.vars=c("time", "cycle"), na.rm = na.rm,
+                        variable.name = variable.name, value.name = value.name)
   return(obj)
 }
 
+tidy.ts <- .tidy.ts
 
 
 #' Tidy \code{ts.split} object into \code{data.frame}.
@@ -66,6 +67,14 @@ tidy.ts <- function(object, na.rm=TRUE, variable.name = "variable",
 #' head(x.tidy)
 tidy.ts.split <- function(x, ...)
 {
-  return(as.data.frame(x, ...))
+  if (is.list(x))
+    x <- do.call(cbind, x)
+
+  x <- as.ts(x)
+  if (is.matrix(x))
+    class(x) <- c("mts", "ts", "matrix")
+  else
+    class(x) <- "ts"
+  return(broom::tidy(x, ...))
 }
 

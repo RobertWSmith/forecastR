@@ -27,8 +27,7 @@
 #' fit <- arima(AirPassengers)
 #' fcst <- forecast(fit)
 #'
-#' library(forecast)
-#' (autoplot(fcst))
+#' ##autoplot(fcst)
 forecast <- function(object, h = 18L, ...)
 {
   mdl <- model(object)
