@@ -1,3 +1,5 @@
+## ts_model_ets.R
+
 
 #' ETS model fitting and updates
 #'
@@ -29,7 +31,7 @@
 #' data('AirPassengers', package = 'datasets')
 #' fit <- ets(AirPassengers)
 #' fit2 <- ets(AirPassengers, lambda = 0)
-ets <- function(y, model = "ZZZ", allow.multiplicative.trend = TRUE, lambda = NULL, ...)
+ets <- function(y, model = "ZZZ", allow.multiplicative.trend = FALSE, lambda = NULL, ...)
 {
   model.name <- "ets"
   kw <- list(...)
@@ -43,15 +45,16 @@ ets <- function(y, model = "ZZZ", allow.multiplicative.trend = TRUE, lambda = NU
     fit <- .ets_initial_fit(y)
   } else
   {
-    fit <- forecast::ets(y, model = model(model),
-                         allow.multiplicative.trend = allow.multiplicative.trend,
-                         lambda = lambda, ...)
+    fit <- try({forecast::ets(y, model = model(model), ...)}, silent=TRUE)
+    if (inherits(fit, "try-error"))
+      fit <- .ets_initial_fit(y)
   }
 
   for (nm in package_options("ts.fields")[[model.name]])
   {
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]), nm)
   }
+
   output <- tsm(model.name, fit)
   return(output)
 }
@@ -70,28 +73,45 @@ ets <- function(y, model = "ZZZ", allow.multiplicative.trend = TRUE, lambda = NU
 .ets_initial_fit <- function(y, split = 0.20)
 {
   y.orig <- y
+  opt.lmb <- optimize.lambda(y)
   y <- ts.split(y, split = split)
   oos.len <- length(y$out.of.sample)
-  opt.lmb <- optimize.lambda(y$in.sample)
 
   fits <- list(
-    base = forecast::ets(y$in.sample),
-    base.lambda = forecast::ets(y$in.sample, lambda = opt.lmb),
-    base.mult = forecast::ets(y$in.sample, allow.multiplicative.trend = TRUE),
-    base.damped.lambda = forecast::ets(y$in.sample, damped=TRUE,
-                                       lambda = opt.lmb),
-    base.mult.damped = forecast::ets(y$in.sample, damped=TRUE,
-                                     allow.multiplicative.trend = TRUE)
+    base = forecast::ets(y$in.sample)
   )
+
+  base.damped <- try({forecast::ets(y$in.sample, damped=TRUE)}, silent=TRUE)
+  if (!inherits(base.damped, "try-error"))
+    fits$base.damped <- base.damped
+
+  base.lambda = try({forecast::ets(y$in.sample, lambda = opt.lmb)}, silent = TRUE)
+  if (!inherits(base.lambda, "try-error"))
+    fits$base.lambda <- base.lambda
+
+  base.damped.lambda = try({forecast::ets(y$in.sample, damped = TRUE, lambda = opt.lmb)}, silent = TRUE)
+  if (!inherits(base.damped.lambda, "try-error"))
+    fits$base.damped.lambda <- base.lambda
 
   fcst.accuracy <- sapply(fits, function(x) {
     fcst <- forecast::forecast(x, h = oos.len)
-    acc <- forecast::accuracy(fcst, y$out.of.sample)
-    return(acc['Test set', 'MAE'])
+    vals <- cbind(as.matrix(fcst$mean, ncol=1), fcst$lower, fcst$upper)
+    if (any(is.na(vals) | is.null(vals) | is.infinite(vals)))
+    {
+      return(Inf)
+    } else
+    {
+      acc <- forecast::accuracy(fcst, y$out.of.sample)
+      return(acc['Test set', 'MAE'])
+    }
   })
 
   bf.idx <- which(fcst.accuracy == (min(fcst.accuracy)))
   best.fit <- fits[[bf.idx[1]]]
   y <- y.orig
-  return(forecast::ets(y, model = best.fit))
+  fit <- try({forecast::ets(y, model = best.fit)}, silent=TRUE)
+  if (inherits(fit, "try-error"))
+    fit <- forecast::ets(y)
+
+  return(fit)
 }

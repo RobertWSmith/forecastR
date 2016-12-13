@@ -42,14 +42,10 @@ ts.split <- function(x, split = 0.2, as.list = TRUE, short.ts.multiple = 2.0, ..
   is.short <- (length(x) < (frequency(x) * short.ts.multiple))
 
   if (is.null(record.count <- dim(x)[1]))
-  {
     record.count <- length(x)
-  }
 
   if (split < 0)
-  {
     stop("`split` must be >= 0.0")
-  }
 
   split.records <- as.integer(1L)
   if (split < 1)
@@ -62,14 +58,21 @@ ts.split <- function(x, split = 0.2, as.list = TRUE, short.ts.multiple = 2.0, ..
 
   # default is to provide records for each
   out.of.sample <- in.sample <- data <- x
-  if (!is.short)
+  if (length(x) > 2)
   {
-    in.sample.end <- tsp(x)[2] - (split.records * deltat(x))
+    if (!is.short)
+    {
+      in.sample.end <- tsp(x)[2] - (split.records * deltat(x))
+    } else if (is.short && (length(x) > 2))
+    {
+      in.sample.end <- tsp(x)[2] - deltat(x)
+    }
     out.sample.start <- in.sample.end + deltat(x)
 
     in.sample <- window(x, end = in.sample.end)
     out.of.sample <- window(x, start = out.sample.start)
   }
+
   if (!as.list)
   {
     output <- cbind(data = data, in.sample = in.sample, out.of.sample = out.of.sample)
@@ -162,9 +165,12 @@ as.data.frame.ts.split <- function(x, ...)
 #' ## [1] 2
 #' short.ts.test(AirPassengers) #returns FALSE
 #' short.ts.test(AirPassengers, 15.0) #returns TRUE
-short.ts.test <- function(y, freq.multiple = 2)
+short.ts.test <- function(y, freq.multiple = 2.0)
 {
-  return((frequency(y) * freq.multiple) > length(y))
+  return(
+    (frequency(y) < freq.multiple) ||
+      (length(y) <= (freq.multiple * frequency(y)))
+    )
 }
 
 
@@ -202,6 +208,15 @@ short.ts.inv <- function(y.short.ts, x.ts = NULL, nm = "", ...)
   return(ts(as.numeric(x.ts), start = ts.start, frequency = ts.freq))
 }
 
-
-
+#' @export
+tidy_ts_df <- function(x) {
+  output <- as.data.frame(x)
+  for (n in colnames(output))
+    output[[n]] <- as.numeric(output[[n]])
+  cn <- colnames(output)
+  output$time <- round(as.numeric(time(x)), digits = 3)
+  output$cycle <- as.integer(cycle(x))
+  output <- output[, c("time", "cycle", cn)]
+  return(output)
+}
 

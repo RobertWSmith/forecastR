@@ -53,17 +53,14 @@ nnetar <- function(y, model = NULL, lambda = NULL, ...)
   if(!is.null(lambda) && is.na(lambda))
     lambda <- NULL
 
+  y.orig <- y
   y.ts <- short.ts(y, freq.multiple = 2, lambda = lambda)
+  y <- y.ts$y
 
-  # when refitting, don't modify the attributes of y
-  if (is.null(model))
-  {
-    y <- y.ts$y
-  }
   if (is.null(model))
     fit <- .nnetar_initial_fit(y)
   else
-    fit <- forecast::nnetar(y, model = model(model), lambda = lambda, ...)
+    fit <- suppressWarnings(forecast::nnetar(y, model = model(model), lambda = lambda, ...))
 
   for (nm in package_options("ts.fields")[[model.name]])
   {
@@ -75,50 +72,64 @@ nnetar <- function(y, model = NULL, lambda = NULL, ...)
 }
 
 
+#' @importFrom forecast nnetar ndiffs
 .nnetar_initial_fit <- function(y, split = 0.20)
 {
   y.orig <- y
   y <- ts.split(y, split = split)
   oos.len <- length(y$out.of.sample)
-  opt.lmb <- optimize.lambda(y$in.sample)
+
+  if (short.ts.test(y$in.sample))
+  {
+    in.sample <- ts(as.numeric(y$in.sample))
+    out.of.sample <- ts(as.numeric(y$out.of.sample),
+                        start = end(y$in.sample) + deltat(y$in.sample))
+    P <- 0
+  }
+  p <- forecast::ndiffs(y$in.sample)
+  if (p < 1)
+    p <- 1
+  P <- 1
 
   gen.opt.func <- function(in.sample, out.of.sample, lambda = NULL)
   {
     oos.len <- length(out.of.sample)
     opt.func <- function(decay)
     {
-      fit <- forecast::nnetar(in.sample, lambda=lambda, decay=decay)
-      fcst <- forecast::forecast(fit, h=oos.len)
+      fit <- suppressWarnings(forecast::nnetar(in.sample, p = p, P = P, lambda = lambda, decay = decay))
+      fcst <- forecast::forecast(fit, h = oos.len)
       acc <- forecast::accuracy(fcst, out.of.sample)
       return(acc['Test set', 'MAE'])
     }
+    return(opt.func)
   }
 
-  base.opt.func <- gen.opt.func(y$in.sample, y$out.of.sample)
+  base.opt.func <- gen.opt.func(y$in.sample, y$out.of.sample, lambda = NULL)
   base.decay <- optimize(base.opt.func, c(0.0, 1.0))
 
-  lambda.opt.func <- gen.opt.func(y$in.sample, y$out.of.sample, lambda = opt.lmb)
-  lambda.decay <- optimize(base.opt.func, c(0.0, 1.0))
-
   fits <- list(
-    base = forecast::nnetar(y$in.sample, maxit = 250),
-    base.decay = forecast::nnetar(y$in.sample, decay = base.decay$minimum,
-                                  maxit = 250),
-    lambda = forecast::nnetar(y$in.sample, lambda = opt.lmb, maxit = 250),
-    lambda.decay = forecast::nnetar(y$in.sample, lambda = opt.lmb,
-                                    decay = lambda.decay$minimum, maxit = 250)
+    base = suppressWarnings(forecast::nnetar(y$in.sample, p = p, P = P, maxit = 250)),
+    base.decay = suppressWarnings(forecast::nnetar(y$in.sample, p = p, P = P,
+                                  decay = base.decay$minimum, maxit = 250))
   )
 
   fcst.accuracy <- sapply(fits, function(x) {
     fcst <- forecast::forecast(x, h = oos.len)
-    acc <- forecast::accuracy(fcst, y$out.of.sample)
-    # err <- fcst$mean - y$out.of.sample
-    return(acc['Test set', 'MAE'])
+    vals <- as.numeric(fcst$mean)
+    if (any(is.na(vals)) || any(is.null(vals)) || any(is.infinite(vals)) ||
+        any(abs(vals) > max(fcst$x)^10 ))
+    {
+      return(Inf)
+    } else
+    {
+      acc <- forecast::accuracy(fcst, y$out.of.sample)
+      return(acc['Test set', 'MAE'])
+    }
   })
   best.acc <- which(fcst.accuracy == min(fcst.accuracy))
   best.fit <- fits[[best.acc]]
   y <- y.orig
-  return(forecast::nnetar(y, model = best.fit))
+  return(suppressWarnings(forecast::nnetar(y, model = best.fit)))
 }
 
 

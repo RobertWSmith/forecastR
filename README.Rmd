@@ -1,3 +1,0 @@
-[![Travis-CI Build Status](https://travis-ci.org/RobertWSmith/forecastR.svg?branch=master)](https://travis-ci.org/RobertWSmith/forecastR)
-Hello, world!
-

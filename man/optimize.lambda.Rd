@@ -4,7 +4,8 @@
 \alias{optimize.lambda}
 \title{Calculate optimal lambda based on \code{tslm} residuals}
 \usage{
-optimize.lambda(y, lower = -1, upper = 2, tol = 0.001, ...)
+optimize.lambda(y, lower = ifelse(any(y < 1e-05), 0.01, -1), upper = 2,
+  tol = 0.001, ...)
 }
 \arguments{
 \item{y}{univariate time series}

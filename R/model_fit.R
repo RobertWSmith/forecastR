@@ -46,7 +46,14 @@ ts.model.fit <- function(y, ts.model.type = c("arfima", "arima", "bats", "ets",
   kw <- list(...)
 
   kw$y <- quote(y)
-  mdl <- do.call(ts.model.type, kw)
+  mdl <- try({do.call(ts.model.type, kw)}, silent=TRUE)
+
+  if (inherits(mdl, "try-error"))
+  {
+    y <- forecast::tsclean(y, lambda = kw$lambda)
+    kw$y <- quote(y)
+    mdl <- do.call(ts.model.type, kw)
+  }
 
   return(mdl)
 }
@@ -104,11 +111,19 @@ ts.model.refit <- function(y, model, ...)
   if (!is.character(mdl))
     kw$model <- quote(mdl)
 
-  func.name <- model$function.name
-  if (is.null(func.name))
-    func.name <- model$fit$function.name
+  ts.model.type <- model$function.name
+  if (is.null(ts.model.type))
+    ts.model.type <- model$fit$function.name
 
-  mdl <- do.call(func.name, kw)
+  mdl <- try({do.call(ts.model.type, kw)}, silent=TRUE)
+
+  if (inherits(mdl, "try-error"))
+  {
+    y <- forecast::tsclean(y, lambda = kw$lambda)
+    kw$y <- quote(y)
+    mdl <- do.call(ts.model.type, kw)
+  }
+
   return(mdl)
 }
 
@@ -126,6 +141,7 @@ ts.model.refit <- function(y, model, ...)
 #' @param split numeric. parameter passed to \code{\link[forecastR]{ts.split}}
 #'
 #' @importFrom stats AIC
+#' @importFrom forecast tsclean
 #'
 #' @export
 #'
@@ -161,8 +177,8 @@ ts.model.refit <- function(y, model, ...)
 #' errs <- mf$forecast$mean - ap.split$out.of.sample
 #' print(errs)
 #' ## plot(errs)
-ts.model.autofit <- function(y, lambda = optimize.lambda(y), alpha = 0.05, split = 0.20,
-                             return.all.models = FALSE,
+ts.model.autofit <- function(y, lambda = NULL, alpha = 0.05,
+                             split = 0.20, return.all.models = FALSE,
                              ts.model.type = c("arfima", "arima", "bats", "ets",
                                                "nnetar", "stlm", "tbats", "tslm"),
                              ...)
@@ -170,13 +186,27 @@ ts.model.autofit <- function(y, lambda = optimize.lambda(y), alpha = 0.05, split
   #internal function to standardize output
   .fcst.acc <- function(fit, y.oos, is.short)
   {
+    if (inherits(fit, "try-error"))
+    {
+      fit <- ts.model.fit(forecast::tsclean(y), ts.model.type = ts.model.type, lambda = NULL)
+    }
     if (is.short)
     {
-      fcst <- forecast(fit)
+      fcst <- try({forecast(fit)}, silent=TRUE)
+      if (inherits(fcst, "try-error"))
+      {
+        fit <- ts.model.fit(y, ts.model.type = ts.model.type, lambda = NULL)
+        fcst <- forecast(fit, h = length(y.oos))
+      }
       acc <- forecast::accuracy(fcst)
     } else
     {
-      fcst <- forecast(fit, h = length(y.oos))
+      fcst <- try({forecast(fit, h = length(y.oos))}, silent=TRUE)
+      if (inherits(fcst, "try-error"))
+      {
+        fit <- ts.model.fit(y, ts.model.type = ts.model.type, lambda = NULL)
+        fcst <- forecast(fit, h = length(y.oos))
+      }
       tsp(fcst$mean) <- tsp(y.oos)
       acc <- forecast::accuracy(fcst, y.oos)
     }
@@ -188,7 +218,7 @@ ts.model.autofit <- function(y, lambda = optimize.lambda(y), alpha = 0.05, split
   #makes sure values is comprable to a number
   .acc.avail <- function(x)
   {
-    return(!(is.na(x) || is.nan(x) || is.null(x)))
+    return(!(is.na(x) || is.nan(x) || is.null(x) || is.infinite(x)))
   }
 
   is.short <- TRUE
@@ -223,20 +253,20 @@ ts.model.autofit <- function(y, lambda = optimize.lambda(y), alpha = 0.05, split
     return(.fcst.acc(fit, y.oos, is.short=is.short))
   }
 
-  if (length(lambda) == 1L)
+  if (length(lambda) == 1L || is.null(lambda))
   {
-    fit <- ts.model.fit(y, ts.model.type = ts.model.type, lambda = lambda, ...)
+    fit <- try({ts.model.fit(y, ts.model.type = ts.model.type, lambda = lambda, ...)}, silent = TRUE)
     return(.fcst.acc(fit, y.oos, is.short=is.short))
   }
 
   # loop over lambdas, fitting each model
   outputs <- lapply(lambda, function(tst.lambda) {
-    fit <- ts.model.fit(y, ts.model.type = ts.model.type, lambda = tst.lambda, ...)
+    fit <- try({ts.model.fit(y, ts.model.type = ts.model.type, lambda = tst.lambda, ...)}, silent = TRUE)
     return(.fcst.acc(fit, y.oos, is.short=is.short))
   })
 
   # no need to check for in-sample best if we want all models returned
-  if (return.all.models)
+  if (return.all.models || length(lambda) < 2)
     return(outputs)
 
   # seed with first model, then loop over the others comparing each time
@@ -277,119 +307,3 @@ ts.model.autofit <- function(y, lambda = optimize.lambda(y), alpha = 0.05, split
   }
   return(outputs[[best.idx]])
 }
-
-
-### internal function, baseline forecasts is used inside
-### `.parse.forecasts` @param data univariate time series
-#  #' @importFrom stats fitted residuals
-# .baseline.forecasts <- function(data, h = 18L, return.forecasts = FALSE)
-# {
-#   ret <- list(names = c("naive", "meanf", "thetaf"), data = data)
-#   naive.fcst <- forecast::naive(data, h = h)
-#   mean.fcst <- forecast::meanf(data, h = h)
-#   theta.fcst <- forecast::thetaf(data, h = h)
-#   if (return.forecasts)
-#     ret$objects <- list(naive.fcst = naive.fcst, mean.fcst = mean.fcst,
-#       theta.fcst = theta.fcst)
-#   ret$fcst.mean <- cbind(naive.fcst$mean, mean.fcst$mean, theta.fcst$mean)
-#   ret$fcst.resid <- cbind(residuals(naive.fcst), residuals(mean.fcst),
-#     residuals(theta.fcst))
-#   ret$fcst.fitted <- cbind(fitted(naive.fcst), fitted(mean.fcst),
-#     fitted(theta.fcst))
-#   colnames(ret$fcst.mean) <- ret$names
-#   colnames(ret$fcst.resid) <- ret$names
-#   colnames(ret$fcst.fitted) <- ret$names
-#   return(ret)
-# }
-
-
-### internal function, run `.baseline.forecasts`, then add
-### forecasts from the model list @param model.list
-### \code{list} of \code{tsm} fits @param data univariate
-### time series, provided to `.baseline.forecasts` @param
-### refit.models logical. Default \code{FALSE}, if
-### \code{TRUE} the model object is refit with the time series
-### provided @param h integer. number of steps to forecast
-### @param return.forecasts logical. if TRUE, field `objects`
-### is present in the returned list, with a named list by model
-### of the returned forecast objects
-# .model.forecasts <- function(model.list, data, refit.models = FALSE,
-#   h = 18L, return.forecasts = TRUE)
-#   {
-#   ret <- .baseline.forecasts(data, h = h, return.forecasts)
-#   fcst.objects <- bf$objects
-#   mdl.names <- names(model.list)
-#   ret.names <- ret$names
-#   for (i in 1:length(mdl.names))
-#   {
-#     nm <- mdl.names[i]
-#     ret.names[length(ret.names) + 1] <- nm
-#     mdl <- model.list[[i]]
-#     if (refit.models)
-#       mdl <- do.call(nm, list(y = data, model = model(mdl)))
-#     fcst <- forecast(mdl, h = h)
-#     ret$fcst.mean <- cbind(ret$fcst.mean, fcst$mean)
-#     ret$fcst.resid <- cbind(ret$fcst.resid, residuals(fcst))
-#     ret$fcst.fitted <- cbind(ret$fcst.resid, fitted(fcst))
-#     if (return.forecasts)
-#       fcst.objects[[nm]] <- fcst
-#   }
-#   ret$names <- ret.names
-#   ret$objects <- fcst.objects
-#   colnames(ret$fcst.mean) <- ret$names
-#   colnames(ret$fcst.resid) <- ret$names
-#   colnames(ret$fcst.fitted) <- ret$names
-#   return(ret)
-# }
-
-
-### internal function, parses model lists into list of useful
-### values
-#  #' @importFrom stats fitted residuals
-# .parse.forecasts <- function(is.model.list, y.split, oos.h = 18L,
-#   return.models = TRUE)
-#   {
-#   data <- y.split$data
-#   is <- y.split$in.sample
-#   oos <- y.split$out.of.sample
-#   output <- .baseline.forecasts(is, length(oos), oos.fits)
-#   output$names <- c(output$names, mdl.names)
-#   mdl.names <- names(is.model.list)
-#   for (i in mdl.names)
-#   {
-#     mdl <- is.model.list[[i]]
-#     is.fit <- mdl$in.sample
-#     is.fcst <- forecast(is.fit, h = output$train.len)
-#     output$train.resid <- cbind(output$train.resid, residuals(is.fcst))
-#     if (oos.fits)
-#     {
-#       oos.fit <- ts.model.refit(data, is.fit)
-#       oos.fcst <- forecast(oos.fit, h = oos.h)
-#       output$train.experts <- cbind(output$train.experts,
-#         is.fcst$mean)
-#       output$oos.experts <- cbind(output$oos.experts, oos.fcst$mean)
-#       output$oos.resid <- cbind(output$oos.resid, residuals(oos.fcst))
-#     } else
-#     {
-#       output$train.experts <- cbind(output$train.experts,
-#         fitted(is.fcst))
-#     }
-#   }
-#   if (oos.fits)
-#   {
-#     colnames(output$oos.experts) <- output$names
-#     colnames(output$train.resid) <- output$names
-#     colnames(output$oos.resid) <- output$names
-#     output$is.error <- (output$train.experts - oos)
-#     colnames(output$is.error) <- output$names
-#     output$is.abs.error <- abs(output$is.error)
-#     colnames(output$is.abs.error) <- output$names
-#   }
-#   colnames(output$train.experts) <- output$names
-#   base <- .parse.forecasts(models, y.split = y.split, oos.h = oos.h,
-#     oos.fits = short.ts)
-#   output$models <- is.model.list
-#   return(structure(output, class = "tsm.multi"))
-# }
-
-

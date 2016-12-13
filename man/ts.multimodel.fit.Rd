@@ -6,7 +6,7 @@
 \usage{
 ts.multimodel.fit(y, split = 0.2, boot.reps = NULL, alpha = 0.05,
   ts.model.types = c("arfima", "arima", "bats", "ets", "nnetar", "stlm",
-  "tbats", "tslm"), freq.multiple = 2, ...)
+  "tbats", "tslm"), lambda = NULL, freq.multiple = 2, ...)
 }
 \arguments{
 \item{y}{\code{\link[stats]{ts}} object. univariate time series}
@@ -23,6 +23,8 @@ which determines if transformation makes for an improved model}
 
 \item{ts.model.types}{character vector. name of function returing \code{tsm}
 model object}
+
+\item{lambda}{nummeric. Box-Cox transformation parameter.}
 
 \item{freq.multiple}{numeric. Multiple of the time series' frequency which
 determines if the provided time series is short. If short, `ts.model.types`

@@ -5,8 +5,7 @@
 \title{Mixture Model fit}
 \usage{
 ts.mixture(y, tsm.multi = NULL, split = 0.2, oos.h = 18L, alpha = 0.05,
-  boot.reps = NULL, min.records = as.integer(min(6L, frequency(y)) + 1L),
-  return.models = is.null(tsm.multi), ...)
+  boot.reps = NULL, ...)
 }
 \arguments{
 \item{y}{\code{\link[stats]{ts}} object. univariate time series}
@@ -21,13 +20,6 @@ output.}
 \item{alpha}{significance level for comparative testing}
 
 \item{boot.reps}{integer. number of bootstrap replicates to fit against}
-
-\item{min.records}{integer. number of records identifying a minimum sample for
-splitting the time series into subsets for in-sample cross validation of the
-model fits}
-
-\item{return.models}{logical. if \code{TRUE} then updated models are
-returned as `models` field, else updated models are not returned.}
 
 \item{...}{extra arguments for `ts.model.type`}
 }

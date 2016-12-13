@@ -16,13 +16,17 @@ Imports:
     car,
     broom,
     opera,
-    ForecastCombinations,
     TSA,
+    tseries,
     meboot,
     ggplot2,
-    reshape2
+    reshape2,
+    zoo,
+    mgcv,
+    fracdiff,
+    moments
 Suggests:
-    testthat,
     datasets,
+    testthat,
     covr
 RoxygenNote: 5.0.1

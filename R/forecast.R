@@ -56,7 +56,7 @@ forecast <- function(object, h = 18L, ...)
 #' @param lambda numeric. parameter for Box-Cox transformation
 #' @param ... additional arguments
 #' @export
-baseline.forecast <- function(y, h = 18L, lambda = optimize.lambda(y), ...)
+baseline.forecast <- function(y, h = 18L, lambda = NULL, ...)
 {
   y.orig <- y
   y.ts <- short.ts(y)
@@ -64,15 +64,24 @@ baseline.forecast <- function(y, h = 18L, lambda = optimize.lambda(y), ...)
 
   naive.fcst <- forecast::naive(y, h = h, lambda = lambda, ...)
   mean.fcst <- forecast::meanf(y, h = h, lambda = lambda, ...)
-  theta.fcst <- forecast::thetaf(y, h = h, ...)
+  theta.fcst <- try({forecast::thetaf(y, h = h, ...)}, silent=TRUE)
+
 
   output <- ts(cbind(
     naive.fcst$mean,
-    mean.fcst$mean,
-    theta.fcst$mean
+    mean.fcst$mean
     ), start=tsp(y.orig)[2]+deltat(y.orig), frequency=frequency(y.orig))
 
-  colnames(output) <- c("naive", "mean", "theta")
+  base.cn <- c("naive", "mean")
+  colnames(output) <- base.cn
+
+  if (!inherits(theta.fcst, "try-error"))
+  {
+    theta.fcst$mean <- ts(as.numeric(theta.fcst$mean))
+    tsp(theta.fcst$mean) <- tsp(output)
+    output <- cbind(output, theta.fcst$mean)
+    colnames(output) <- c(base.cn, "theta")
+  }
   return(output)
 }
 
@@ -98,24 +107,27 @@ multiforecast <- function(object.list, h = 18L, y = NULL, ...)
   }
 
   means.fcst <- do.call(cbind, lapply(object.list, function(x) {
-    fcst <- forecast(x, h=h)
+    fcst <- forecast(x, h = h)
     ff <- fitted(fcst)
     e <- tsp(ff)[2] + deltat(ff)
-    fcst <- ts(as.numeric(fcst$mean), start = e, frequency=frequency(ff))
+    fcst <- ts(as.numeric(fcst$mean), start = e, frequency = frequency(ff))
     return(fcst)
   }))
 
-  colnames(means.fcst) <- sapply(object.list, function(x) {
-    if (is.null(x$fit$function.name))
-      return(x$function.name)
-    return(x$fit$function.name)
-  })
-
-  if (!is.null(y))
+  if (length(dim(means.fcst)) == 2L && ncol(means.fcst) > 1)
   {
-    mf.names <- colnames(means.fcst)
-    means.fcst <- cbind(base.fcst, means.fcst)
-    colnames(means.fcst) <- c(colnames(base.fcst), mf.names)
+    colnames(means.fcst) <- sapply(object.list, function(x) {
+      if (is.null(x$fit$function.name))
+        return(x$function.name)
+      return(x$fit$function.name)
+    })
+
+    if (!is.null(y))
+    {
+      mf.names <- colnames(means.fcst)
+      means.fcst <- cbind(base.fcst, means.fcst)
+      colnames(means.fcst) <- c(colnames(base.fcst), mf.names)
+    }
   }
   return(means.fcst)
 }

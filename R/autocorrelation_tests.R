@@ -18,7 +18,9 @@
 #' autocorr.lags(AirPassengers)
 autocorr.lags <- function(y, alpha = 0.05)
 {
-  freq <- forecast::findfrequency(y)
+  freq <- try({forecast::findfrequency(y)}, silent=TRUE)
+  if (inherits(freq, "try-error"))
+    freq <- frequency(hasTsp(as.ts(y)))
   return(as.integer(if (freq <= 1L)
   {
     (min(10L, ceiling(length(y)/5), na.rm = TRUE))

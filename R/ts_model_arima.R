@@ -78,25 +78,41 @@ arima <- function(y, lambda = NULL, model = NULL, order = NULL, ...)
 .arima_initial_fit <- function(y, split = 0.20)
 {
   y.orig <- y
+  opt.lmb <- optimize.lambda(y)
   y <- ts.split(y, split = split)
   oos.len <- length(y$out.of.sample)
-  opt.lmb <- optimize.lambda(y$in.sample)
 
   fits <- list(
-    base = forecast::auto.arima(y$in.sample),
-    lambda = forecast::auto.arima(y$in.sample, lambda = opt.lmb)
+    base = forecast::auto.arima(y$in.sample)
   )
 
-  if (length(arimaorder(fits$base)) == 3 || arimaorder(fits$base)[5] == 0)
+  lambda.fit <- try({lambda = forecast::auto.arima(y$in.sample, lambda = opt.lmb)}, silent=TRUE)
+  if (!inherits(lambda.fit, "try-error"))
+    fits$lambda <- lambda.fit
+
+  if (!("lambda" %in% names(fits)) || length(arimaorder(fits$base)) == 3 ||
+      arimaorder(fits$base)[5] == 0)
     fits$seasonal.base <- forecast::auto.arima(y$in.sample, D = 1)
 
-  if (length(arimaorder(fits$base)) == 3 || arimaorder(fits$lambda)[5] == 0)
-    fits$seasonal.lambda <- forecast::auto.arima(y$in.sample, D = 1, lambda = opt.lmb)
+  if (!("lambda" %in% names(fits)) || length(arimaorder(fits$lambda)) == 3 ||
+      arimaorder(fits$lambda)[5] == 0)
+  {
+    seas.lambda <- try({forecast::auto.arima(y$in.sample, D = 1, lambda = opt.lmb)}, silent = TRUE)
+    if (!inherits(seas.lambda, "try-error"))
+      fits$seasonal.lambda <- seas.lambda
+  }
 
   fcst.accuracy <- sapply(fits, function(x) {
     fcst <- forecast::forecast(x, h = oos.len)
-    acc <- forecast::accuracy(fcst, y$out.of.sample)
-    return(acc['Test set', 'MAE'])
+    vals <- cbind(as.matrix(fcst$mean, ncol=1), fcst$lower, fcst$upper)
+    if (any(is.na(vals) | is.null(vals) | is.infinite(vals)))
+    {
+      return(Inf)
+    } else
+    {
+      acc <- forecast::accuracy(fcst, y$out.of.sample)
+      return(acc['Test set', 'MAE'])
+    }
   })
 
   #find minimum error metric & subset models

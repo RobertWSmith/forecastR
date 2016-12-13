@@ -14,9 +14,10 @@
 #' @export
 tsm <- function(function.name, y, ...)
 {
-  output <- structure(list(function.name = function.name, model = y, ...),
-    class = "tsm")
-  return(output)
+  # e <- new.env(parent = emptyenv())
+  # assign("function.name", function.name, envir = e)
+  # assign("model", y, envir = e)
+  return(structure(list(function.name = function.name, model = y), class = "tsm"))
 }
 
 #' @param object value to be validated as `tsm` object

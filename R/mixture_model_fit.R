@@ -10,16 +10,11 @@
 #'   output.
 #' @param alpha significance level for comparative testing
 #' @param boot.reps integer. number of bootstrap replicates to fit against
-#' @param min.records integer. number of records identifying a minimum sample for
-#'   splitting the time series into subsets for in-sample cross validation of the
-#'   model fits
-#' @param return.models logical. if \code{TRUE} then updated models are
-#'   returned as `models` field, else updated models are not returned.
 #' @param ... extra arguments for `ts.model.type`
 #'
 #' @importFrom opera mixture
 #' @importFrom stats na.omit predict
-#' @importFrom ForecastCombinations Forecast_comb Forecast_comb_all
+#' @importFrom forecast accuracy
 #'
 #' @export
 #'
@@ -68,27 +63,34 @@
 #' ## (ggplot(fcst.err.melt.df, aes(x = date, y = value, color = variable)) +
 #' ##   geom_line() + ggtitle("Absolute Error"))
 ts.mixture <- function(y, tsm.multi = NULL, split = 0.20, oos.h = 18L,
-                       alpha = 0.05, boot.reps = NULL,
-                       min.records = as.integer(min(6L, frequency(y))+1L),
-                       return.models = is.null(tsm.multi), ...)
+                       alpha = 0.05, boot.reps = NULL, ...)
 {
-  vec.is.short <- (length(y) < min.records)
-  if (vec.is.short)
-  {
-    split <- NULL
-  } else if (split > length(y))
-  {
-    # if the split is longer than the length of y, split is assigned to 20% of y
-    y <- 0.20
-  }
+  output <- new.env(parent = emptyenv())
+  assign("y", y, envir = output)
+  assign("split", split, envir = output)
+  assign("alpha", alpha, envir = output)
+  assign("oos.h", oos.h, envir = output)
+  assign("boot.reps", boot.reps, envir = output)
+  assign("experts", tsm.multi, envir = output)
 
   null.init.tsm.multi <- is.null(tsm.multi)
+  output$y.split <- y.split <- ts.split(y, split = split)
+  output$is.short <- vec.is.short <- short.ts.test(y.split$in.sample)
+
   if (null.init.tsm.multi)
-  {
     tsm.multi <- ts.multimodel.fit(y, split = split, ...)
-  } else if (return.models && !null.init.tsm.multi)
+
+  # ensure models are refit to whole dataset
+  tsm.multi <- ts.multimodel.refit(y, tsm.multi = tsm.multi)
+
+  ## grab out of sample forecast, checking if any values are not acceptable
+  mf <- multiforecast(tsm.multi, h = oos.h)
+  if (length(dim(mf)) == 2L)
   {
-    tsm.multi <- ts.multimodel.refit(y, tsm.multi = tsm.multi)
+    good.est <- apply(mf, 2, function(z) {
+      return(!any(is.infinite(z) | is.na(z) | is.null(z) | abs(z) > max(y)^2))
+    })
+    output$tsm.multi <- tsm.multi <- tsm.multi[good.est]
   }
 
   if (!vec.is.short)
@@ -96,21 +98,29 @@ ts.mixture <- function(y, tsm.multi = NULL, split = 0.20, oos.h = 18L,
     mmr <- ts.multimodel.resample(y, tsm.multi, boot.reps = boot.reps,
                                   split = split, oos.h = oos.h, alpha = alpha)
 
-    mx <- opera::mixture(model = 'MLpol', loss.type = 'square')
+    mx <- opera::mixture(model = 'Ridge', loss.type = 'square')
     if (mmr$bootstrapped)
     {
+      #train.data & test.data are lists of time series
       for (i in 1:length(mmr$train.data))
       {
-        mx <- predict(mx, newexperts = mmr$test.forecast[[i]],
+        alive.fcst <- !(is.infinite(mmr$test.forecast[[i]]) ||
+                          is.na(mmr$test.forecast[[i]]) ||
+                          is.null(mmr$test.forecast[[i]]))
+        alive.fcst <- ifelse(alive.fcst, 1, 0)
+        mx <- predict(mx, newexperts = mmr$test.forecast[[i]], alive = alive.fcst,
                       newY = mmr$test.data[[i]], online = TRUE, type = "model")
       }
     } else
     {
+      alive.fcst <- !(is.infinite(mmr$test.forecast) ||
+                        is.na(mmr$test.forecast) ||
+                        is.null(mmr$test.forecast))
       mx <- predict(mx, newexperts = mmr$test.forecast, newY = mmr$test.data,
-                    online = TRUE, type = "model")
+                    alive = alive.fcst, online = TRUE, type = "model")
     }
-    mx <- predict(mx, newexperts = mmr$forecast, online = FALSE, type = "all")
-    mx$response <- ts(mx$response, start = start(mmr$forecast),
+    mxr <- predict(mx, newexperts = mmr$forecast, online = FALSE, type = "all")
+    mxr$response <- ts(mxr$response, start = start(mmr$forecast),
                       frequency = frequency(mmr$forecast))
   } else
   {
@@ -119,32 +129,101 @@ ts.mixture <- function(y, tsm.multi = NULL, split = 0.20, oos.h = 18L,
 
     mmr <- list(
       y = y,
-      forecast = multiforecast(is.fits, h = oos.h, y = y.split$in.sample),
-      test.forecast = multiforecast(tsm.multi, h = oos.h, y = y)
+      forecast = multiforecast(tsm.multi, h = oos.h, y = y),
+      test.forecast = multiforecast(is.fits, h = length(y.split$out.of.sample),
+                                    y = y.split$in.sample)
       )
     # create a dummy mixture model of simple rowMeans
     mx <- list()
-    npreds <- ncol(mmr$experts)
-    mx$weights <- matrix(rep(1/npreds, npreds), ncol=npreds)
-    mx$response <- ts(rowMeans(mmr$experts), start = start(mmr$forecast),
+    npreds <- ncol(mmr$forecast)
+    mx$weights <- matrix(rep(1/npreds, npreds), ncol = npreds)
+    mx$response <- ts(rowMeans(mmr$forecast), start = start(mmr$forecast),
                       frequency = frequency(mmr$forecast))
+    mxr <- mx
   }
 
-  output <- list(
-    mixture.model = mx,
-    experts = mmr$experts,
-    forecast = mmr$forecast,
-    test.forecast = mmr$test.forecast
-    )
-  if ((null.init.tsm.multi) || return.models)
-  {
-    output$tsm.multi <- tsm.multi
-  }
-  if (!vec.is.short)
-  {
-    output$in.sample.experts <- mmr$in.sample.experts
-  }
+  output$mixture.model <- mx
+  output$mx.model <- mxr
+  output$experts <- tsm.multi
+  output$test.forecast <- mmr$test.forecast
+  output$mixture.forecast <- mxr$response
 
-  output <- structure(output, class = "ts.mixture")
+  fcst <- mmr$forecast
+  output$forecast <- cbind(fcst, mxr$response)
+  colnames(output$forecast) <- c(colnames(fcst), "mixture.model")
+
+  output <- structure(as.list(output), class = "ts.mixture")
   return(output)
 }
+
+
+#' @export
+final.forecast.selection <- function(y, ts.mixture, split = 0.10, ...) {
+  stopifnot(inherits(ts.mixture, "ts.mixture"))
+  mx.nm <- "mixture.model"
+
+  y.split <- ts.split(y, split = split)
+
+  if (length(y) < 3 || !inherits(ts.mixture$mixture.model, "mixture"))
+  {
+    ts.mixture$selected.forecast <- ts.mixture$mixture.forecast
+    ts.mixture$selected.forecast.name <- mx.nm
+
+    tfn <- colnames(ts.mixture$test.forecast)
+    ts.mixture$test.forecast <- cbind(ts.mixture$test.forecast, ts.mixture$mixture.forecast)
+    colnames(ts.mixture$test.forecast) <- c(tfn, mx.nm)
+  } else {
+    tsm.multi <- ts.multimodel.refit(y.split$in.sample, tsm.multi = ts.mixture$experts)
+    mf <- multiforecast(tsm.multi, h = length(y.split$out.of.sample), y = y.split$in.sample)
+    resp <- predict(ts.mixture$mixture.model, newexperts = mf, online = FALSE, type = "all")
+    resp <- ts(resp$response, start = start(mf), frequency = frequency(mf))
+
+    fcst <- cbind(mf, resp)
+    colnames(fcst) <- c(colnames(mf), mx.nm)
+    fcst.err <- fcst - y.split$out.of.sample
+    colnames(fcst.err) <- colnames(fcst)
+
+    fcst.err.sq <- colSums(fcst.err^2, na.rm=TRUE)
+    names(fcst.err.sq) <- colnames(fcst)
+
+    fcst.err.stat <- apply(fcst, 2, function(ft) {
+      acc <- forecast::accuracy(ft, y.split$out.of.sample)
+      acc <- acc['Test set', 'RMSE']
+      return(acc)
+    })
+    min.fcst.err.stat <- fcst.err.stat[fcst.err.stat == min(fcst.err.stat)]
+
+    min.fcst.err <- as.character( names(min.fcst.err.stat)[1] )
+
+    ts.mixture$test.forecast <- fcst
+    ts.mixture$residuals <- tidy_ts_df(fcst.err)
+
+    ts.mixture$residuals$selected.forecast <- fcst.err[,min.fcst.err]
+    ts.mixture$residuals$selected.forecast.name <- min.fcst.err
+
+    ts.mixture$selected.forecast <- ts.mixture$forecast[ , min.fcst.err[1] ]
+    ts.mixture$selected.forecast.name <- min.fcst.err[1]
+  }
+
+  return(ts.mixture)
+}
+
+#' @export
+generate.forecast <- function(y, boot.reps = NULL, oos.h = 18L, split = 0.20, alpha = 0.05, ...) {
+  y.split <- ts.split(y, split = split)
+
+  tsm <- ts.multimodel.fit(y, boot.reps = boot.reps)
+  mx <- ts.mixture(y, tsm, oos.h = oos.h, boot.reps = boot.reps)
+
+  ff.split <- 6L
+  ## if the length of the out of sample portion is shorter than the ff.split
+  ## default final split
+  ## then cut the length of the out of sample in half
+  if (length(y.split$out.of.sample) < ff.split)
+    ff.split <- as.numeric(length(y.split$out.of.sample)) / 2.0
+
+  ff.split <- as.integer(floor(ff.split))
+  ffs <- final.forecast.selection(y, mx, split = ff.split)
+  return(ffs)
+}
+

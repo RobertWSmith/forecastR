@@ -4,7 +4,7 @@
 \alias{baseline.forecast}
 \title{Baseline / Null Hypothesis Forecasts}
 \usage{
-baseline.forecast(y, h = 18L, lambda = optimize.lambda(y), ...)
+baseline.forecast(y, h = 18L, lambda = NULL, ...)
 }
 \arguments{
 \item{y}{\code{ts} univariate time series}

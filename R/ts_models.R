@@ -41,12 +41,21 @@ arfima <- function(y, model = NULL, lambda = NULL, stepwise = FALSE, ...)
   y.ts <- short.ts(y, freq.multiple = 2, lambda = lambda)
   y <- y.ts$y
 
-  if (!is.null(model))
+  if (!is.null(model) && is.null(lambda))
     lambda <- model(model)$lambda
 
-  suppressWarnings(
-    fit <- forecast::arfima(y, stepwise = stepwise, lambda = lambda, ...)
-    )
+  fit <- try({
+    suppressWarnings(forecast::arfima(y, stepwise = stepwise, lambda = lambda, ...))
+    }, silent = TRUE)
+
+  if (inherits(fit, "try-error"))
+    fit <- try({suppressWarnings(forecast::arfima(y, lambda = optimize.lambda(y),
+                                             stepwise = stepwise, ...))},
+               silent = TRUE)
+
+  if (inherits(fit, "try-error"))
+    fit <- suppressWarnings(forecast::arfima(y, stepwise = stepwise, ...))
+
   for (nm in package_options("ts.fields")[[model.name]])
   {
     fit[[nm]] <- short.ts.inv(y.ts, as.ts(fit[[nm]]), nm)
@@ -217,7 +226,7 @@ tslm <- function(y, model = NULL, lambda = NULL, ...)
 {
   model.name <- "tslm"
   kw <- list(...)
-  if(!is.null(lambda) && is.na(lambda))
+  if ((!is.null(lambda) && is.na(lambda)) || !is.numeric(lambda))
     lambda <- NULL
 
   y.orig <- y

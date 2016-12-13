@@ -17,6 +17,7 @@
 #' @param freq.multiple numeric. Multiple of the time series' frequency which
 #'  determines if the provided time series is short. If short, `ts.model.types`
 #'  are selected from a limited list.
+#' @param lambda nummeric. Box-Cox transformation parameter.
 #' @param alpha numeric. significance threshold for \code{\link[forecast]{dm.test}}
 #'   which determines if transformation makes for an improved model
 #' @param ... extra arguments for `ts.model.type`
@@ -44,7 +45,7 @@ ts.multimodel.fit <- function(y, split = 0.20, boot.reps = NULL, alpha = 0.05,
                               ts.model.types = c("arfima", "arima", "bats",
                                                  "ets", "nnetar", "stlm",
                                                  "tbats", "tslm"),
-                              freq.multiple = 2, ...)
+                              lambda = NULL, freq.multiple = 2, ...)
 {
   y.orig <- y
   kw <- list(...)
@@ -58,12 +59,20 @@ ts.multimodel.fit <- function(y, split = 0.20, boot.reps = NULL, alpha = 0.05,
     y <- ts(y, start = start(y.orig), frequency = frequency(y.orig))
   }
 
+
+  if (short.ts.test(ts.split(y)$in.sample))
+    ts.model.types <- ts.model.types[!(ts.model.types %in% c("stlm"))]
+
+  if (length(y) < 2L)
+    ts.model.types <- c()
+
   output <- lapply(ts.model.types, function(func.name) {
-    return(ts.model.autofit(y, split = split, alpha = alpha,
+    return(ts.model.autofit(y, lambda = lambda, split = split, alpha = alpha,
                             ts.model.type = func.name,
                             return.all.models = FALSE, ...))
     })
-  output <- structure(.mm.prune(output), class = 'tsm.multi')
+  names(output) <- ts.model.types
+  output <- ts.multimodel.refit(y.orig, structure(.mm.prune(output), class = 'tsm.multi'))
   return(output)
 }
 
@@ -108,6 +117,7 @@ ts.multimodel.refit <- function(y, tsm.multi, ...)
   refit <- lapply(tsm.multi, function(x) {
     return(ts.model.refit(y, model = x, ...))
     })
+  names(refit) <- sapply(refit, function(x) { x$function.name })
   return(refit)
 }
 
@@ -149,40 +159,39 @@ ts.multimodel.resample <- function(y, tsm.multi, boot.reps = NULL, split = 0.2,
   dta <- is.fcst <- list()
 
   y.orig <- y
-  y.split <- ts.split(y, split=split)
+  y.split <- ts.split(y, split = split)
   in.sample <- y.split$in.sample
 
   oos.mdl <- ts.multimodel.refit(y, tsm.multi, ...)
   oos.fcst <- multiforecast(oos.mdl, h = oos.h, y = y)
 
-  output <- list(
-    y = y,
-    train.data = y.split$in.sample,
-    test.data = y.split$out.of.sample,
-    bootstrapped = (!is.null(boot.reps)),
-    tsm = oos.mdl,
-    forecast = oos.fcst
-    )
+  output <- new.env(parent = emptyenv())
+  assign("y", y, envir = output)
+  assign("train.data", y.split$in.sample, envir = output)
+  assign("test.data", y.split$out.of.sample, envir = output)
+  assign("bootstrapped", (!is.null(boot.reps)), envir = output)
+  assign("tsm", oos.mdl, envir = output)
+  assign("forecast", oos.fcst, envir = output)
 
   if (!is.null(boot.reps))
   {
     # bootstrap resampling
     y.bs.base <- meboot::meboot(y, reps = ifelse(boot.reps^2 > 999, 999, boot.reps^2))$ensemble
     y.bs.samples <- sapply(1:(boot.reps * 2), function(x) {
-      sample(1:ncol(y.bs.base), boot.reps, replace=TRUE)
+      sample(1:ncol(y.bs.base), boot.reps, replace = TRUE)
     })
     y.bs <- apply(y.bs.samples, 2, function(x) {
       tmp <- y.bs.base[,x]
-      tmp[tmp<0.0] <- 0.0
-      tmp <- rowMeans(tmp, na.rm=TRUE)
+      tmp[tmp < 0.0] <- 0.0
+      tmp <- rowMeans(tmp, na.rm = TRUE)
       if (any(tmp < 1))
-        tmp <- tmp+1
+        tmp <- tmp + 1
       return(tmp)
     })
     y.bs <- as.ts(y.bs)
     tsp(y.bs) <- tsp(y.orig)
 
-    y.bs.split <- ts.split(y.bs, split=split)
+    y.bs.split <- ts.split(y.bs, split = split)
     in.sample <- y.bs.split$in.sample
 
     output$bootstrap.data <- y.bs.split
@@ -212,6 +221,6 @@ ts.multimodel.resample <- function(y, tsm.multi, boot.reps = NULL, split = 0.2,
     output$test.forecast <- is.fcst
   }
 
-  output <- structure(output, class="tsm.multi.resample")
+  output <- structure(as.list(output), class = "tsm.multi.resample")
   return(output)
 }

@@ -11,9 +11,9 @@ ts.model.fit(y, ts.model.type = c("arfima", "arima", "bats", "ets", "nnetar",
 
 ts.model.refit(y, model, ...)
 
-ts.model.autofit(y, lambda = optimize.lambda(y), alpha = 0.05,
-  split = 0.2, return.all.models = FALSE, ts.model.type = c("arfima",
-  "arima", "bats", "ets", "nnetar", "stlm", "tbats", "tslm"), ...)
+ts.model.autofit(y, lambda = NULL, alpha = 0.05, split = 0.2,
+  return.all.models = FALSE, ts.model.type = c("arfima", "arima", "bats",
+  "ets", "nnetar", "stlm", "tbats", "tslm"), ...)
 }
 \arguments{
 \item{y}{\code{ts}. Univariate Time Series}
