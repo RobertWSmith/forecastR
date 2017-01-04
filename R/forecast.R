@@ -55,6 +55,9 @@ forecast <- function(object, h = 18L, ...)
 #' @param h integer. number of periods to forecast
 #' @param lambda numeric. parameter for Box-Cox transformation
 #' @param ... additional arguments
+#'
+#' @importFrom stats deltat
+#'
 #' @export
 baseline.forecast <- function(y, h = 18L, lambda = NULL, ...)
 {
@@ -93,7 +96,7 @@ baseline.forecast <- function(y, h = 18L, lambda = NULL, ...)
 #'   forecasts are also provided.
 #' @param ... additional arguments
 #'
-#' @importFrom stats end
+#' @importFrom stats end deltat
 #'
 #' @export
 #'

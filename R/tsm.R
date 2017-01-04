@@ -9,9 +9,6 @@
 #' @param ... not currently used
 #'
 #' @return object of class \code{tsm}
-#'
-#' @family TimeSeriesModel tsm
-#' @export
 tsm <- function(function.name, y, ...)
 {
   # e <- new.env(parent = emptyenv())

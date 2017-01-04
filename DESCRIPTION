@@ -11,7 +11,6 @@ LazyData: TRUE
 Imports:
     stats,
     methods,
-    settings,
     forecast,
     car,
     broom,
@@ -24,7 +23,8 @@ Imports:
     zoo,
     mgcv,
     fracdiff,
-    moments
+    moments,
+    settings
 Suggests:
     datasets,
     testthat,

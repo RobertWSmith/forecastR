@@ -1,55 +1,55 @@
 ### transformations.R
 
 
-## internal function
-gen.func <- function(y)
-{
-  period <- as.integer(max(c(autocorr.lags(y), 2L)))
+# ## internal function
+# gen.func <- function(y)
+# {
+#   period <- as.integer(max(c(autocorr.lags(y), 2L)))
+#
+#   opt.func <- function(lmb)
+#   {
+#     #transform
+#     # tfm <- BoxCox(y, lmb)
+#     # rsd <- zoo::rollapply(tfm, period, sd)
+#
+#     #remove trend
+#     fit <- try({tslm(rsd, lambda = lmb)}, silent = TRUE)
+#     if (inherits(fit, "try-error"))
+#       return(Inf)
+#
+#     # extract residuals
+#     resids <- residuals(fit)
+#     res <- ts(diff(resids, ifelse(period >= length(resids) - 2L, 1L, period)))
+#
+#     #check lagged autocorrelation
+#     # lbt <- Box.test(res, lag = period, type = "Ljung-Box")
+#     return(sd(res, na.rm = TRUE) / mean(res, na.rm = TRUE))
+#   }
+#   return(opt.func)
+# }
 
-  opt.func <- function(lmb)
-  {
-    #transform
-    # tfm <- BoxCox(y, lmb)
-    # rsd <- zoo::rollapply(tfm, period, sd)
 
-    #remove trend
-    fit <- try({tslm(rsd, lambda = lmb)}, silent = TRUE)
-    if (inherits(fit, "try-error"))
-      return(Inf)
-
-    # extract residuals
-    resids <- residuals(fit)
-    res <- ts(diff(resids, ifelse(period >= length(resids) - 2L, 1L, period)))
-
-    #check lagged autocorrelation
-    # lbt <- Box.test(res, lag = period, type = "Ljung-Box")
-    return(sd(res, na.rm = TRUE) / mean(res, na.rm = TRUE))
-  }
-  return(opt.func)
-}
-
-
-## internal function
-gen.func2 <- function(y)
-{
-  # period <- as.integer(max(round(c(frequency(y), autocorr.lags(y), 2L))))
-
-  opt.func <- function(lmb)
-  {
-    #transform
-    tfm <- BoxCox(y, lmb)
-
-    if (any(is.na(tfm)))
-      return(Inf)
-
-    v.mean <- mean(tfm)
-    v.sd <- sd(tfm)
-    v.rat <- v.sd / v.mean
-
-    return(sd(v.rat, na.rm = TRUE) / mean(v.rat, na.rm = TRUE))
-  }
-  return(opt.func)
-}
+# ## internal function
+# gen.func2 <- function(y)
+# {
+#   # period <- as.integer(max(round(c(frequency(y), autocorr.lags(y), 2L))))
+#
+#   opt.func <- function(lmb)
+#   {
+#     #transform
+#     tfm <- BoxCox(y, lmb)
+#
+#     if (any(is.na(tfm)))
+#       return(Inf)
+#
+#     v.mean <- mean(tfm)
+#     v.sd <- sd(tfm)
+#     v.rat <- v.sd / v.mean
+#
+#     return(sd(v.rat, na.rm = TRUE) / mean(v.rat, na.rm = TRUE))
+#   }
+#   return(opt.func)
+# }
 
 
 #' Calculate optimal lambda based on \code{tslm} residuals
@@ -100,18 +100,20 @@ gen.func2 <- function(y)
 optimize.lambda <- function(y, lower = ifelse(any(y < 0.00001), 0.01, -1.0),
                             upper = 2.0, tol = 0.001, ...)
 {
-  ll <- try({forecast::BoxCox.lambda(y, method = "loglik", lower = lower, upper = upper)}, silent = TRUE)
-  g <- try({forecast::BoxCox.lambda(y, method = "guerrero", lower = lower, upper = upper)}, silent = TRUE)
+  int.func <- function(lower, upper)
+  {
+    int.int <- function(y, method)
+    {
+      x <- try({forecast::BoxCox.lambda(y, method = method, lower = lower, upper = upper)}, silent = TRUE)
+      if (inherits(x, "try-error"))
+        return(1.0)
+      return(x)
+    }
+    return(int.int)
+  }
 
-  if (inherits(g, "try-error"))
-    g <- 1.0
+  func <- int.func(lower, upper)
 
-  if (inherits(ll, "try-error"))
-    ll <- g
-
-  # opt.func <- gen.func(y)
-  # outputs <- suppressWarnings(optimize(opt.func, c(min(c(ll, g)) - 0.5, max(ll, g) + 0.50),
-  #                                      maximum = FALSE, tol = tol))
-  return(max(c(ll, g)))
+  return(max(c(func(y, "loglik"), func(y, "guerrero"))))
 }
 

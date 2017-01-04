@@ -72,6 +72,7 @@ nnetar <- function(y, model = NULL, lambda = NULL, ...)
 }
 
 
+#' @importFrom stats deltat
 #' @importFrom forecast nnetar ndiffs
 .nnetar_initial_fit <- function(y, split = 0.20)
 {

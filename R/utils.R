@@ -16,7 +16,7 @@
 #' @return \code{ts.split} object.
 #' @export
 #'
-#' @importFrom stats tsp frequency window na.omit
+#' @importFrom stats tsp frequency window na.omit deltat
 #'
 #' @examples
 #' library(forecastR)
@@ -116,6 +116,8 @@ is.ts.split <- function(x)
 #'
 #' @export
 #'
+#' @importFrom stats time cycle
+#'
 #' @examples
 #' library(forecastR)
 #' data('AirPassengers', package='datasets')
@@ -208,6 +210,11 @@ short.ts.inv <- function(y.short.ts, x.ts = NULL, nm = "", ...)
   return(ts(as.numeric(x.ts), start = ts.start, frequency = ts.freq))
 }
 
+
+#' Tidy Time Series to data.frame
+#'
+#' @param x time series object
+#'
 #' @export
 tidy_ts_df <- function(x) {
   output <- as.data.frame(x)

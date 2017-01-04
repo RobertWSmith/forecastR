@@ -13,9 +13,7 @@
 #' @keywords package
 NULL
 
-
 ## Tidy dir settings.
-
 
 # formatR::tidy_dir(path = '.', recursive = TRUE, comment =
 # TRUE, blank = TRUE, arrow = TRUE, brace.newline = TRUE,
@@ -39,13 +37,6 @@ PACKAGE_OPTIONS <- settings::options_manager(
     forecast = c("mean", "lower", "upper", "x", "fitted", "residuals")
     )
   )
-
-# , .allowed = list( autofit.models =
-# settings::inlist('arima', 'arfima', 'bats', 'ets',
-# 'nnetar', 'stlm', 'tbats', 'tslm'), autofit.models.short.ts
-# = settings::inlist('arima', 'ets'),
-# short.ts.frequency.multiple = settings::inrange(min = 1,
-# max = Inf) )
 
 
 #' Set or get options for \code{forecastR} package
@@ -90,7 +81,7 @@ pkg_reset <- function()
   settings::reset(PACKAGE_OPTIONS)
 }
 
-
+#' @export
 .onLoad <- function(libname, pkgname)
 {
   pkg_reset()

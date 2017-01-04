@@ -26,6 +26,7 @@ f2 <- function(x, a, b)
 #' Gratuitously borrowed from:
 #' http://robjhyndman.com/hyndsight/tscharacteristics/
 #'
+#' @importFrom stats stl ts.union sd var
 #' @importFrom forecast InvBoxCox BoxCox BoxCox.lambda findfrequency
 #' @importFrom mgcv gam s
 #' @importFrom stats as.ts frequency na.contiguous
@@ -133,6 +134,10 @@ f2 <- function(x, a, b)
 }
 
 
+#' Time Series Characteristics
+#'
+#' @param y time series vector
+#'
 #' @export
 ts.characteristics <- function(y)
 {
@@ -145,121 +150,3 @@ ts.characteristics <- function(y)
 
   return(output)
 }
-
-
-# scl <- function(x, a, b)
-# {
-#   eax <- exp(x*a)
-#   eax[is.infinite(eax)] <- 1.0
-#   eax[!is.infinite(eax)] <- (eax-1)/(eax+b)
-#   return(eax)
-# }
-#
-# sclinv <- function(x, a, b)
-# {
-#   eax <- exp(a*x)
-#   ea <- exp(a)
-#   return((eax-1)/(eax+b)*(ea+b)/(ea-1))
-# }
-
-
-# #' @importFrom forecast InvBoxCox
-# #' @importFrom stats Box.test
-# #' @importFrom tseries terasvirta.test
-# #' @importFrom fracdiff fracdiff
-# ts.characteristics <- function(y)
-# {
-#   # y.orig <- y
-#   y.len <- length(y)
-#   # y.tsp <- tsp(y)
-#   # y.freq <- frequency(y)
-#   freq <- findfrequency(y)
-#   fx <- c(frequency = (exp((freq-1)/50)-1 / (1+exp((freq-1)/50))))
-#
-#   output <- list(
-#     data = y,
-#     length = y.len,
-#     orig.tsp = tsp(y),
-#     identified.frequency = freq,
-#     exponential.frequency = fx
-#   )
-#
-#   y <- ts(as.numeric(y), frequency = freq)
-#
-#   output$decomposed <- decompose.y <- decompose(y)
-#
-#   # adjust data
-#   fits <- decompose.y$trend + decompose.y$season
-#   adj.y <- decompose.y$y - fits + mean(decompose.y$trend, na.rm = TRUE)
-#
-#   # tadj.y <- InvBoxCox(adj.y, decompose.y$lambda)
-#   adj.y.var <- var(adj.y, na.rm = TRUE)
-#
-#   detrend <- decompose.y$y - decompose.y$trend
-#   deseason <- decompose.y$y - decompose.y$season
-#   season <- trend <- 0.0
-#
-#   if (var(detrend, na.rm = TRUE) > 1e-10)
-#   {
-#     trend <- max(0, min(1, (1 - adj.y.var) / var(deseason, na.rm = TRUE)))
-#   }
-#
-#   if (var(deseason, na.rm = TRUE) > 1e-10)
-#   {
-#     season <- max(0, min(1, (1 - adj.y.var) / var(detrend, na.rm = TRUE)))
-#   }
-#
-#   output$trend <- trend
-#   output$season <- season
-#
-#   output$mean <- y.mean <- mean(y, na.rm = TRUE)
-#   output$sd <- y.sd <- sd(y, na.rm = TRUE)
-#
-#   lags <- 10
-#
-#   # Serial Correlation
-#   Q <- as.numeric(Box.test(y, lag = lags)$statistic / (y.len * lags))
-#   output$autocorrelation <- sclinv(Q, 7.53, 0.103)
-#
-#   # Nonlinearity
-#   p <- as.numeric(terasvirta.test(na.contiguous(y))$statistic)
-#   output$non.linearity <- scl(p, 0.069, 2.304)
-#
-#   # Skewness
-#   sk <- abs(mean((y - y.mean)^3, na.rm = TRUE) / y.sd^3)
-#   output$skewness <- scl(sk, 1.510, 5.993)
-#
-#   # Kurtosis
-#   k <- mean((y - y.mean)^4, na.rm = TRUE) / y.sd^4
-#   output$kurtosis <- scl(k, 2.273, 11567)
-#
-#   # Hurst = d + 0.5 where d is fractional differences
-#   output$Hurst <- fracdiff(na.contiguous(y), 0, 0)$d + 0.5
-#
-#
-#   # Lyapunov Exponent
-#   fLyap <- NULL
-#   if (freq <= (y.len - 10))
-#   {
-#     Ly <- numeric(y.len - freq)
-#     for (i in 1:(y.len - freq))
-#     {
-#       ix <- order(abs(y[i] - y))
-#       ix <- ix[ix < (y.len - freq)]
-#       j <- ix[2]
-#       Ly[i] <- log(abs((y[i + freq] - y[j + freq]) / (y[i] - y[j]))) / freq
-#       if (is.na(Ly[i]) | is.infinite(Ly[i]))
-#         Ly[i] <- NA
-#     }
-#     Lyap <- mean(Ly, na.rm = TRUE)
-#     fLyap <- exp(Lyap) / (1 + exp(Lyap))
-#   }
-#   output$Lyapunov <- fLyap
-#
-#   return(output)
-# }
-
-
-
-
-
