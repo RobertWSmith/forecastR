@@ -168,8 +168,6 @@ ts.mixture <- function(y, tsm.multi = NULL, split = 0.20, oos.h = 18L,
 #' @param ts.mixture object of class 'tsm'
 #' @param split fraction of records to reserve for our of sample cross validation
 #' @param ... other keyword arguments, not currently used
-#'
-#' @export
 final.forecast.selection <- function(y, ts.mixture, split = 0.10, ...) {
   stopifnot(inherits(ts.mixture, "ts.mixture"))
   mx.nm <- "mixture.model"
@@ -184,7 +182,9 @@ final.forecast.selection <- function(y, ts.mixture, split = 0.10, ...) {
     tfn <- colnames(ts.mixture$test.forecast)
     ts.mixture$test.forecast <- cbind(ts.mixture$test.forecast, ts.mixture$mixture.forecast)
     colnames(ts.mixture$test.forecast) <- c(tfn, mx.nm)
-  } else {
+
+  } else
+  {
     tsm.multi <- ts.multimodel.refit(y.split$in.sample, tsm.multi = ts.mixture$experts)
     mf <- multiforecast(tsm.multi, h = length(y.split$out.of.sample), y = y.split$in.sample)
     resp <- predict(ts.mixture$mixture.model, newexperts = mf, online = FALSE, type = "all")
@@ -195,7 +195,7 @@ final.forecast.selection <- function(y, ts.mixture, split = 0.10, ...) {
     fcst.err <- fcst - y.split$out.of.sample
     colnames(fcst.err) <- colnames(fcst)
 
-    fcst.err.sq <- colSums(fcst.err^2, na.rm=TRUE)
+    fcst.err.sq <- colSums(fcst.err^2, na.rm = TRUE)
     names(fcst.err.sq) <- colnames(fcst)
 
     fcst.err.stat <- apply(fcst, 2, function(ft) {
@@ -246,6 +246,7 @@ generate.forecast <- function(y, boot.reps = NULL, oos.h = 18L, split = 0.20, al
 
   ff.split <- as.integer(floor(ff.split))
   ffs <- final.forecast.selection(y, mx, split = ff.split)
+
   return(ffs)
 }
 
